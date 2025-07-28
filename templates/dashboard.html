@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Main Register | Church Student Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar-toggle" id="sidebarToggle">☰</div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-wrapper">
+            <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo" style="margin-bottom: 20px; margin-left: 0; height: 80px; width: 80px; border-radius: 50%;">
+        </div>
+        <h2>Classes</h2>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">Main Register</a></li>
+            <li><a href="{{ url_for('dashboard', class_name='Genesis') }}">Genesis</a></li>
+            <li><a href="{{ url_for('dashboard', class_name='Exodus') }}">Exodus</a></li>
+            <li><a href="{{ url_for('dashboard', class_name='Psalms') }}">Psalms</a></li>
+            <li><a href="{{ url_for('dashboard', class_name='Proverbs') }}">Proverbs</a></li>
+            <li><a href="{{ url_for('dashboard', class_name='Revelation') }}">Revelation</a></li>
+            <li><a href="{{ url_for('dashboard', class_name='High Schoolers') }}">High Schoolers</a></li>
+           <li><a href="{{ url_for('attendance_report') }}">📊 Attendance Report</a></li>
+
+        </ul>
+    </aside>
+
+    <main class="register">
+           {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+        <div style="text-align: right;">
+            <a href="{{ url_for('logout') }}" style="color: #ffffff; background-color: #D32F2F; border-radius: 2px; padding: 3px 7px; font-weight: bold; text-decoration: none;">Logout</a>
+        </div>
+
+        <div class="logo-wrapper">
+            <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo" style="margin-bottom: 20px; margin-left: 0;">
+        </div>
+
+        <h1>
+            {% if selected_class %}
+                {{ selected_class }} Class - 
+            {% endif %}
+            Student Register - {{ month }}/{{ year }}
+        </h1>
+
+        <form method="get">
+            <input type="hidden" name="class_name" value="{{ selected_class }}">
+            <label>Month:
+                <select name="month" onchange="this.form.submit()">
+                    {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>Year:
+                <select name="year" onchange="this.form.submit()">
+                    {% for y in range(2023, 2031) %}
+                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </form>
+
+        <p><strong>Present Today:</strong> <span id="presentCount">0</span></p>
+        <button id="openModalBtn" style="margin-bottom: 20px;">+ New Student</button>
+
+        <input type="text" id="searchInput" placeholder="Search student by name..." style="padding: 8px; margin-bottom: 15px; width: 100%; max-width: 400px; border-radius: 5px; border: 1px solid #ccc;">
+
+        <table id="studentTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    {% for sunday in sundays %}
+                        <th>{{ sunday.strftime('%d %b') }}</th>
+                    {% endfor %}
+                    {% if session["role"] == "teacher" %}
+                        <th>Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+    {% for student in students %}
+    <tr {% if student.deletion_requested %} style="background-color: #eee; color: gray;" {% endif %}>
+        <td>
+            {{ student.name }}
+            {% if student.deletion_requested %}
+                <br><small><em>Pending Admin Deletion</em></small>
+            {% endif %}
+        </td>
+        <td>
+            {% set birth = student.dob | todatetime %}
+            {% set age = ((now() - birth).days // 365) %}
+            {{ age }}
+        </td>
+        {% for sunday in sundays %}
+  {% if not student.deletion_requested and student.status == "active" %}
+  <td>
+    <input type="checkbox"
+           class="attendance-checkbox"
+           data-sid="{{ student.id }}"
+           data-date="{{ sunday.strftime('%Y-%m-%d') }}"
+           {% if attendance_present(student.id, sunday) %} checked {% endif %}>
+  </td>
+{% else %}
+  <td></td>
+{% endif %}
+
+        {% endfor %}
+
+        <td>
+            {% if session["role"] == "teacher" and not student.deletion_requested %}
+                <form action="{{ url_for('mark_for_deletion', student_id=student.id) }}" method="POST">
+            <button type="submit" title="Request Deletion" style="background: transparent; border: none; color: rgb(0, 0, 0); cursor: pointer;">
+                <i class="fas fa-trash"></i>
+            </button>
+                </form>
+
+            {% elif session["role"] == "admin" and student.deletion_requested %}
+                <form action="{{ url_for('approve_delete', student_id=student.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" style="background: green; color: white; border: none; padding: 5px 10px;">✔ Approve</button>
+                </form>
+                <form action="{{ url_for('reject_delete', student_id=student.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" style="background: orange; color: white; border: none; padding: 5px 10px;">✖ Reject</button>
+                </form>
+            {% endif %}
+            {% if session["role"] == "admin" %}
+<td>
+    <a href="{{ url_for('edit_student', student_id=student.id) }}"
+   title="Edit"
+   style="text-decoration: none; color: #007bff;">
+   <i class="fas fa-pen-to-square"></i>
+</a>
+
+</td>
+{% endif %}
+
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+        </table>
+    </main>
+</div>
+
+<!-- Modal for New Student -->
+<div id="newStudentModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Register New Student</h2>
+    <form action="{{ url_for('add_student') }}" method="POST">
+        <input type="text" name="name" placeholder="Full Name" required><br>
+        <input type="date" name="dob" max="{{ now().strftime('%Y-%m-%d') }}" required><br>
+        <input type="text" name="parent" placeholder="Parent/Guardian Name"><br>
+        <input type="text" name="contact" placeholder="Emergency Contact"><br>
+        <button type="submit">Register</button>
+    </form>
+  </div>
+</div>
+
+<!-- JS Scripts -->
+<script>
+
+    setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(flash => {
+      flash.style.transition = "opacity 0.5s ease-out";
+      flash.style.opacity = "0";
+      setTimeout(() => flash.remove(), 500); // Remove it completely
+    });
+  }, 1000); // Show for 4 seconds
+
+    document.querySelectorAll('.attendance-checkbox').forEach(cb => {
+    cb.addEventListener('change', function () {
+        const studentId = this.dataset.sid;
+        const date = this.dataset.date;
+        const present = this.checked;
+
+        fetch('/mark_attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `student_id=${studentId}&date=${date}&present=${present}`
+        });
+    });
+});
+
+    const checkboxes = document.querySelectorAll('.attendance-checkbox');
+    const presentCounter = document.getElementById('presentCount');
+
+    function updatePresentCount() {
+        const count = [...checkboxes].filter(cb => cb.checked).length;
+        presentCounter.textContent = count;
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updatePresentCount);
+    });
+
+    const modal = document.getElementById("newStudentModal");
+    const btn = document.getElementById("openModalBtn");
+    const span = document.getElementsByClassName("close")[0];
+
+    btn.onclick = () => { modal.style.display = "block"; }
+    span.onclick = () => { modal.style.display = "none"; }
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // Search
+    const searchInput = document.getElementById("searchInput");
+    const rows = document.querySelectorAll("#studentTable tbody tr");
+
+    searchInput.addEventListener("keyup", function () {
+        const filter = this.value.toLowerCase();
+        rows.forEach(row => {
+            const nameCell = row.querySelector("td");
+            const name = nameCell.textContent.toLowerCase();
+            row.style.display = name.includes(filter) ? "" : "none";
+        });
+    });
+
+    // Sidebar toggle
+    const toggleBtn = document.getElementById("sidebarToggle");
+    const sidebar = document.getElementById("sidebar");
+
+    toggleBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("active");
+    });
+
+    window.addEventListener("click", function (e) {
+        if (!sidebar.contains(e.target) && e.target !== toggleBtn && sidebar.classList.contains("active")) {
+            sidebar.classList.remove("active");
+        }
+    });
+</script>
+
+</body>
+</html>
