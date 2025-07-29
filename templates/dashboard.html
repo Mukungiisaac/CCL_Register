@@ -71,6 +71,10 @@
                 </select>
             </label>
         </form>
+        <a href="{{ url_for('all_students') }}" style="padding: 5px 10px; background: #333; color: white; border-radius: 5px; text-decoration: none;">
+    View All Students
+</a>
+
 
         <p><strong>Present Today:</strong> <span id="presentCount">0</span></p>
         <button id="openModalBtn" style="margin-bottom: 20px;">+ New Student</button>
@@ -147,6 +151,13 @@
 {% endif %}
 
         </td>
+                <td>
+          <a href="{{ url_for('student_detail', student_id=student.id) }}"
+             style="color: #28a745; text-decoration: none;">
+             <i class="fas fa-eye"></i> <!-- or 👁️ -->
+          </a>
+        </td>
+
     </tr>
     {% endfor %}
 </tbody>

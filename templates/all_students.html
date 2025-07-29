@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Students</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f8f8;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            color: #D32F2F;
+            margin: 0;
+        }
+
+        .btn-back {
+            background-color: #D32F2F;
+            color: #fff;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .filter-form {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-form select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .filter-form button {
+            background-color: #D32F2F;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background-color: #D32F2F;
+            color: #fff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .action-btns a {
+            margin: 0 5px;
+            color: #007bff;
+            font-size: 16px;
+            text-decoration: none;
+        }
+
+        .action-btns a:hover {
+            color: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .header-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .filter-form {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Top Header Section -->
+    <div class="header-bar">
+        <div class="header-left">
+            <a href="{{ url_for('dashboard') }}" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <h1 class="page-title">
+                All Registered Students{% if selected_class %} - {{ selected_class }}{% endif %}
+            </h1>
+        </div>
+
+        <form method="get" action="{{ url_for('all_students') }}" class="filter-form">
+            <label for="class_name">Filter by Class:</label>
+            <select name="class_name" id="class_name">
+                <option value="">-- All Classes --</option>
+                {% for cls in class_list %}
+                    <option value="{{ cls }}" {% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Filter</button>
+        </form>
+    </div>
+
+    <!-- Student Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Class</th>
+                <th>DOB</th>
+                <th>Parent</th>
+                <th>Contact</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ student.name }}</td>
+                <td>{{ student.student_class }}</td>
+                <td>{{ student.dob }}</td>
+                <td>{{ student.parent }}</td>
+                <td>{{ student.contact }}</td>
+                <td class="action-btns">
+                    <a href="{{ url_for('student_detail', student_id=student.id) }}" title="View"><i class="fas fa-eye"></i></a>
+                    {% if session['role'] == 'admin' %}
+                        <a href="{{ url_for('edit_student', student_id=student.id) }}" title="Edit"><i class="fas fa-pen-to-square"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+</body>
+</html>

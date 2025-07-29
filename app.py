@@ -398,6 +398,7 @@ def attendance_pdf():
     pdf.seek(0)
     filename = f"Attendance_{selected_class or 'All'}_{month}_{year}.pdf"
     return send_file(pdf, download_name=filename, as_attachment=True)
+
 @app.route("/edit_student/<int:student_id>", methods=["GET", "POST"])
 def edit_student(student_id):
     if "user" not in session or session.get("role") != "admin":
@@ -417,6 +418,32 @@ def edit_student(student_id):
         return redirect(url_for("dashboard"))
 
     return render_template("edit_student.html", student=student)
+
+@app.route("/student/<int:student_id>")
+def student_detail(student_id):
+    if "user" not in session:
+        flash("Please log in first.", "error")
+        return redirect(url_for("home"))
+
+    student = Student.query.get_or_404(student_id)
+    return render_template("student_detail.html", student=student)
+
+@app.route("/all_students")
+def all_students():
+    if "user" not in session:
+        flash("You must be logged in to view this page.", "error")
+        return redirect(url_for("home"))
+
+    selected_class = request.args.get("class_name")
+    
+    class_list = ['Genesis', 'Exodus', 'Psalms', 'Proverbs', 'Revelation', 'High Schoolers']  # ✅ Make sure this is included
+
+    if selected_class:
+        students = Student.query.filter_by(status="active", student_class=selected_class).order_by(Student.name).all()
+    else:
+        students = Student.query.filter_by(status="active").order_by(Student.name).all()
+
+    return render_template("all_students.html", students=students, selected_class=selected_class, class_list=class_list)
 
 # -------------------------------
 # Run App

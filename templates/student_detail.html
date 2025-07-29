@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .student-profile {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        .student-profile h2 {
+            color: #D32F2F;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .student-profile p {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        .btn-group {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn-group a {
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 0 5px;
+            font-size: 14px;
+        }
+
+        .edit-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .back-btn {
+            background-color: #ccc;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="student-profile">
+        <h2>{{ student.name }}</h2>
+        <p><strong>Class:</strong> {{ student.student_class }}</p>
+        <p><strong>Date of Birth:</strong> {{ student.dob }}</p>
+        <p><strong>Parent/Guardian:</strong> {{ student.parent }}</p>
+        <p><strong>Emergency Contact:</strong> {{ student.contact }}</p>
+
+        <div class="btn-group">
+            <a href="{{ url_for('dashboard') }}" class="back-btn">← Back to Dashboard</a>
+            {% if session['role'] == 'admin' %}
+                <a href="{{ url_for('edit_student', student_id=student.id) }}" class="edit-btn">✏️ Edit</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
