@@ -11,10 +11,11 @@
 <div class="container">
     <div class="sidebar-toggle" id="sidebarToggle">☰</div>
 
-    <aside class="sidebar" id="sidebar">
-        <div class="logo-wrapper">
-            <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo" style="margin-bottom: 20px; margin-left: 0; height: 80px; width: 80px; border-radius: 50%;">
-        </div>
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-close" id="sidebarClose">&times;</div>
+    <div class="logo-wrapper">
+        <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo" style="margin-bottom: 20px; margin-left: 0; height: 80px; width: 80px; border-radius: 50%;">
+    </div>
         <h2>Classes</h2>
         <ul>
             <li><a href="{{ url_for('dashboard') }}">Main Register</a></li>
@@ -65,14 +66,14 @@
 
             <label>Year:
                 <select name="year" onchange="this.form.submit()">
-                    {% for y in range(2023, 2031) %}
+                    {% for y in range(2023, 2036) %}
                         <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
             </label>
         </form>
         <a href="{{ url_for('all_students') }}" style="padding: 5px 10px; background: #333; color: white; border-radius: 5px; text-decoration: none;">
-    View All Students
+    All Students
 </a>
 
 
@@ -133,10 +134,10 @@
 
             {% elif session["role"] == "admin" and student.deletion_requested %}
                 <form action="{{ url_for('approve_delete', student_id=student.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" style="background: green; color: white; border: none; padding: 5px 10px;">✔ Approve</button>
+                    <button type="submit" style="background: green; color: white; border: none; padding: 5px 10px; cursor: pointer;">✔ Approve</button>
                 </form>
                 <form action="{{ url_for('reject_delete', student_id=student.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" style="background: orange; color: white; border: none; padding: 5px 10px;">✖ Reject</button>
+                    <button type="submit" style="background: orange; color: white; border: none; padding: 5px 10px; cursor: pointer;">✖ Reject</button>
                 </form>
             {% endif %}
             {% if session["role"] == "admin" %}
@@ -213,6 +214,7 @@
         const count = [...checkboxes].filter(cb => cb.checked).length;
         presentCounter.textContent = count;
     }
+    updatePresentCount();
 
     checkboxes.forEach(cb => {
         cb.addEventListener('change', updatePresentCount);
@@ -243,19 +245,32 @@
         });
     });
 
-    // Sidebar toggle
-    const toggleBtn = document.getElementById("sidebarToggle");
-    const sidebar = document.getElementById("sidebar");
+// ...existing code...
+const toggleBtn = document.getElementById("sidebarToggle");
+const sidebar = document.getElementById("sidebar");
+const sidebarClose = document.getElementById("sidebarClose");
 
-    toggleBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("active");
-    });
+toggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    sidebar.classList.add("active");
+});
 
-    window.addEventListener("click", function (e) {
-        if (!sidebar.contains(e.target) && e.target !== toggleBtn && sidebar.classList.contains("active")) {
-            sidebar.classList.remove("active");
-        }
-    });
+sidebarClose.addEventListener("click", (e) => {
+    e.stopPropagation();
+    sidebar.classList.remove("active");
+});
+
+// Only close sidebar if click is outside both sidebar and toggle button
+document.addEventListener("mousedown", function (e) {
+    if (
+        sidebar.classList.contains("active") &&
+        !sidebar.contains(e.target) &&
+        e.target !== toggleBtn
+    ) {
+        sidebar.classList.remove("active");
+    }
+});
+// ...existing code...
 </script>
 
 </body>

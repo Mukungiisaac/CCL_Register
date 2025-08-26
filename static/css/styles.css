@@ -189,37 +189,6 @@ tr:nth-child(even) {
     margin-left: 8px;
 }
 
-/* === Responsive === */
-@media (max-width: 768px) {
-    .container {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        width: 100%;
-        text-align: center;
-    }
-
-    .register {
-        padding: 20px;
-    }
-
-    table, thead, tbody, th, td, tr {
-        display: block;
-    }
-
-    th, td {
-        text-align: left;
-        padding: 8px;
-        border: none;
-        border-bottom: 1px solid #ddd;
-    }
-
-    th {
-        background-color: transparent;
-        color: #D32F2F;
-    }
-}
 
 /* === Modal === */
 .modal {
@@ -275,31 +244,6 @@ tr:nth-child(even) {
     cursor: pointer;
 }
 
-@media (max-width: 768px) {
-    .sidebar-toggle {
-        display: block;
-    }
-
-    .sidebar{
-        position: fixed;
-        left: -100%;
-        top: 0;
-        height: 100%;
-        width: 220px;
-        background-color: #212121;
-        z-index: 999;
-        transition: left 0.3s ease;
-        padding-top: 60px;
-    }
-
-    .sidebar.active {
-        left: 0;
-    }
-
-    .register {
-        padding: 20px;
-    }
-}
 .flash {
     padding: 10px;
     margin: 10px 0;
@@ -381,3 +325,139 @@ body.edit-page {
     font-size: 14px;
     padding-left: 10px;
 }
+/* ...existing code... */
+
+/* Mobile styles */
+@media (max-width: 600px) {
+  body, html {
+    font-size: 16px;
+    padding: 0;
+    margin: 0;
+  }
+
+  .container {
+    flex-direction: column;
+    padding: 0 5px;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -220px;
+    top: 0;
+    width: 200px;
+    height: 100%;
+    background: #222;
+    z-index: 1000;
+    transition: left 0.3s;
+    padding: 20px 10px;
+  }
+  .sidebar.active {
+    left: 0;
+  }
+  .sidebar-toggle {
+    display: block;
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    font-size: 2em;
+    z-index: 1100;
+    background: #222;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  main.register {
+    margin-left: 0;
+    padding: 10px 0;
+    width: 100%;
+  }
+
+  .logo-wrapper img.logo {
+    height: 60px;
+    width: 60px;
+    margin-bottom: 10px;
+  }
+
+  table#studentTable {
+    font-size: 14px;
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
+  table#studentTable th, table#studentTable td {
+    padding: 5px;
+    min-width: 80px;
+  }
+
+  #searchInput {
+    width: 100%;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10px auto;
+    padding: 10px;
+  }
+
+  .flash {
+    font-size: 14px;
+    padding: 5px;
+  }
+}
+
+
+/* ...existing code... */
+@media (max-width: 600px) {
+  .sidebar {
+    position: fixed;
+    left: -220px;
+    top: 0;
+    width: 200px;
+    height: 100%;
+    background: #222;
+    z-index: 1000;
+    transition: left 0.3s;
+    padding: 20px 10px;
+    overflow-y: auto;
+  }
+  .sidebar.active {
+    left: 0;
+  }
+  .sidebar-toggle {
+    display: block;
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    font-size: 2em;
+    z-index: 1100;
+    background: #222;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .sidebar-close {
+    display: block;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    font-size: 2em;
+    color: #fff;
+    cursor: pointer;
+    z-index: 1200;
+  }
+  .container {
+    flex-direction: column;
+    padding: 0 5px;
+  }
+  main.register {
+    margin-left: 0;
+    padding: 10px 0;
+    width: 100%;
+  }
+}
+/* ...existing code... */
