@@ -19,7 +19,7 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 # -------------------------------
 # MySQL DB Config
 # -------------------------------
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:password@localhost/church_register'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///church_register.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -449,4 +449,6 @@ def all_students():
 # Run App
 # -------------------------------
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
