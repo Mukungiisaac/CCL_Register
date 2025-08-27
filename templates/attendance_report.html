@@ -12,7 +12,10 @@
             <h2>Attendance Reports</h2>
             <ul>
                 <li><a href="{{ url_for('dashboard') }}">← Back to Register</a></li>
-                
+                {% if session.get('role') == 'admin' %}
+                <li><a href="{{ url_for('inventory') }}">📦 Inventory</a></li>
+                {% endif %}
+
             </ul>
         </aside>
 

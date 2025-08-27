@@ -1,12 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from datetime import timedelta, datetime, date
 import calendar
-from markupsafe import Markup
 from flask_sqlalchemy import SQLAlchemy
 import pandas as pd
 from io import BytesIO
-from flask import send_file
-from flask import render_template_string
 from xhtml2pdf import pisa
 
 # -------------------------------
@@ -45,6 +42,15 @@ class Attendance(db.Model):
 
     # Relationship (optional but powerful)
     student = db.relationship('Student', backref=db.backref('attendances', lazy=True))
+
+# -------------------------------
+# Inventory Model (Table)
+# -------------------------------
+class Inventory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False)
+    quantity = db.Column(db.Integer, default=0)
+    description = db.Column(db.String(200))
 
 # -------------------------------
 # Dummy Users
@@ -115,6 +121,21 @@ def dashboard():
 
     sundays = get_sundays(year, month)
 
+    # Find the current Sunday (today if it's Sunday, or the most recent Sunday)
+    current_sunday = None
+    if today.weekday() == 6:  # Today is Sunday
+        current_sunday = today
+    else:
+        # Find the most recent Sunday in the current month's Sundays
+        for sunday in reversed(sundays):
+            if sunday <= today:
+                current_sunday = sunday
+                break
+
+    # If no current Sunday found in this month, use today's date
+    if current_sunday is None:
+        current_sunday = today
+
     if selected_class:
         filtered_students = Student.query.filter_by(student_class=selected_class, status="active").all()
     else:
@@ -125,7 +146,8 @@ def dashboard():
                            sundays=sundays,
                            month=month,
                            year=year,
-                           selected_class=selected_class)
+                           selected_class=selected_class,
+                           current_sunday=current_sunday)
 
 # -------------------------------
 # Add Student
@@ -445,6 +467,197 @@ def all_students():
 
     return render_template("all_students.html", students=students, selected_class=selected_class, class_list=class_list)
 
+@app.route('/inventory')
+def inventory():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    items = Inventory.query.all()
+
+    # Organize items by type for the template
+    all_items = items
+    chairs = [item for item in items if item.description and 'chair' in item.description.lower()]
+    tables = [item for item in items if item.description and 'table' in item.description.lower()]
+    boards = [item for item in items if item.description and 'board' in item.description.lower()]
+    pencils = [item for item in items if item.description and 'pencil' in item.description.lower()]
+
+    return render_template("inventory.html",
+                         items=items,
+                         all_items=all_items,
+                         chairs=chairs,
+                         tables=tables,
+                         boards=boards,
+                         pencils=pencils)
+
+@app.route('/add_item', methods=['POST'])
+def add_item():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    name = request.form.get("name")
+    item_type = request.form.get("type")
+    qr_code = request.form.get("qr_code")
+
+    if name and item_type:
+        # If no QR code provided, generate a unique one
+        if not qr_code or qr_code.strip() == "":
+            import time
+            import random
+            timestamp = int(time.time())
+            random_num = random.randint(100, 999)
+            qr_code = f"AUTO_{timestamp}_{random_num}"
+
+        # Check if QR code already exists
+        existing_item = Inventory.query.filter(
+            Inventory.description.like(f"%QR: {qr_code}%")
+        ).first()
+
+        if existing_item:
+            flash(f"Item with QR code '{qr_code}' already exists!", "error")
+            return redirect(url_for("inventory"))
+
+        new_item = Inventory(
+            item_name=name,
+            quantity=1,
+            description=f"{item_type} - QR: {qr_code}"
+        )
+        db.session.add(new_item)
+        db.session.commit()
+
+        if qr_code.startswith("AUTO_"):
+            flash(f"Item '{name}' added successfully with auto-generated ID: {qr_code}!", "success")
+        else:
+            flash(f"Item '{name}' added successfully with QR code: {qr_code}!", "success")
+    else:
+        flash("Item name and type are required!", "error")
+
+    return redirect(url_for("inventory"))
+
+@app.route('/generate_report')
+def generate_report():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    items = Inventory.query.all()
+    total_items = len(items)
+    available_items = len([item for item in items if item.quantity > 0])
+    missing_items = total_items - available_items
+
+    report_data = {
+        'total_items': total_items,
+        'available_items': available_items,
+        'missing_items': missing_items,
+        'items': items
+    }
+
+    flash(f"Report generated: {available_items} available, {missing_items} missing out of {total_items} total items.", "info")
+    return redirect(url_for("inventory"))
+
+@app.route('/inventory_pdf_report')
+def inventory_pdf_report():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    items = Inventory.query.all()
+
+    # Create simple HTML for PDF
+    html_content = f"""
+    <html>
+    <head>
+        <title>Inventory Report</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            th {{ background-color: #f2f2f2; }}
+            .available {{ color: green; }}
+            .missing {{ color: red; }}
+        </style>
+    </head>
+    <body>
+        <h1>Inventory Report</h1>
+        <p>Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <table>
+            <tr>
+                <th>QR Code</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Status</th>
+            </tr>
+    """
+
+    for item in items:
+        qr_code = item.description.split(' - QR: ')[1] if ' - QR: ' in item.description else 'N/A'
+        category = item.description.split(' - QR: ')[0] if ' - QR: ' in item.description else item.description
+        status = "Available" if item.quantity > 0 else "Missing"
+        status_class = "available" if item.quantity > 0 else "missing"
+
+        html_content += f"""
+            <tr>
+                <td>{qr_code}</td>
+                <td>{item.item_name}</td>
+                <td>{category}</td>
+                <td class="{status_class}">{status}</td>
+            </tr>
+        """
+
+    html_content += """
+        </table>
+    </body>
+    </html>
+    """
+
+    # Generate PDF
+    pdf = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=pdf)
+    if pisa_status.err:
+        flash("PDF generation error", "error")
+        return redirect(url_for("inventory"))
+
+    pdf.seek(0)
+    filename = f"Inventory_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    return send_file(pdf, download_name=filename, as_attachment=True)
+
+@app.route('/inventory_excel_report')
+def inventory_excel_report():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    items = Inventory.query.all()
+
+    # Prepare data for Excel
+    data = []
+    for item in items:
+        qr_code = item.description.split(' - QR: ')[1] if ' - QR: ' in item.description else 'N/A'
+        category = item.description.split(' - QR: ')[0] if ' - QR: ' in item.description else item.description
+        status = "Available" if item.quantity > 0 else "Missing"
+
+        data.append({
+            'QR Code': qr_code,
+            'Item Name': item.item_name,
+            'Category': category,
+            'Status': status
+        })
+
+    df = pd.DataFrame(data)
+
+    # Export to Excel
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Inventory')
+    output.seek(0)
+
+    filename = f"Inventory_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return send_file(output,
+                     download_name=filename,
+                     as_attachment=True,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 # -------------------------------
 # Run App
 # -------------------------------
@@ -452,3 +665,5 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
+

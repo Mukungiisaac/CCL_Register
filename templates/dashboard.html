@@ -26,6 +26,9 @@
             <li><a href="{{ url_for('dashboard', class_name='Revelation') }}">Revelation</a></li>
             <li><a href="{{ url_for('dashboard', class_name='High Schoolers') }}">High Schoolers</a></li>
            <li><a href="{{ url_for('attendance_report') }}">📊 Attendance Report</a></li>
+           {% if session.get('role') == 'admin' %}
+           <li><a href="{{ url_for('inventory') }}">📦 Inventory</a></li>
+           {% endif %}
 
         </ul>
     </aside>
@@ -77,7 +80,7 @@
 </a>
 
 
-        <p><strong>Present Today:</strong> <span id="presentCount">0</span></p>
+        <p><strong>Present on {{ current_sunday.strftime('%B %d, %Y') }}:</strong> <span id="presentCount">0</span></p>
         <button id="openModalBtn" style="margin-bottom: 20px;">+ New Student</button>
 
         <input type="text" id="searchInput" placeholder="Search student by name..." style="padding: 8px; margin-bottom: 15px; width: 100%; max-width: 400px; border-radius: 5px; border: 1px solid #ccc;">
@@ -209,9 +212,12 @@
 
     const checkboxes = document.querySelectorAll('.attendance-checkbox');
     const presentCounter = document.getElementById('presentCount');
+    const currentSunday = '{{ current_sunday.strftime("%Y-%m-%d") }}';
 
     function updatePresentCount() {
-        const count = [...checkboxes].filter(cb => cb.checked).length;
+        // Only count checkboxes for the current Sunday
+        const todayCheckboxes = [...checkboxes].filter(cb => cb.dataset.date === currentSunday);
+        const count = todayCheckboxes.filter(cb => cb.checked).length;
         presentCounter.textContent = count;
     }
     updatePresentCount();
