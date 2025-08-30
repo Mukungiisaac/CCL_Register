@@ -21,6 +21,10 @@
                 <p style="color: red;">{{ error }}</p>
             {% endif %}
         </form>
+
+        <div class="register-link">
+            <p>New teacher? <a href="{{ url_for('register') }}" style="color: #007bff; text-decoration: none;">Register for access</a></p>
+        </div>
     </div>
 </body>
 </html>

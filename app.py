@@ -93,12 +93,59 @@ class InventoryAudit(db.Model):
     item = db.relationship('Inventory', backref=db.backref('audit_logs', lazy=True))
 
 # -------------------------------
-# Dummy Users
+# User Model
 # -------------------------------
-users = {
-    "admin@church.org": {"password": "admin123", "role": "admin"},
-    "teacher@church.org": {"password": "teacher123", "role": "teacher"}
-}
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="teacher")
+    full_name = db.Column(db.String(100), nullable=True)
+    email = db.Column(db.String(100), unique=True, nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
+    assigned_class = db.Column(db.String(50), nullable=True)
+    preferred_class = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default="pending")
+    registration_message = db.Column(db.Text, nullable=True)
+    approved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    last_login = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+# -------------------------------
+# Initialize Default Users
+# -------------------------------
+def create_default_users():
+    with app.app_context():
+        # Check if admin exists
+        admin = User.query.filter_by(username='admin@church.org').first()
+        if not admin:
+            admin = User(
+                username='admin@church.org',
+                password='admin123',
+                role='admin',
+                full_name='System Administrator',
+                email='admin@church.org',
+                status='active',
+                assigned_class=None
+            )
+            db.session.add(admin)
+
+        # Check if teacher exists
+        teacher = User.query.filter_by(username='teacher@church.org').first()
+        if not teacher:
+            teacher = User(
+                username='teacher@church.org',
+                password='teacher123',
+                role='teacher',
+                full_name='Demo Teacher',
+                email='teacher@church.org',
+                status='active',
+                assigned_class='Genesis'
+            )
+            db.session.add(teacher)
+
+        db.session.commit()
 
 # -------------------------------
 # Helper: Get all Sundays in a month
@@ -137,14 +184,110 @@ def login():
     email = request.form["email"]
     password = request.form["password"]
 
+    # Check database users first
+    user = User.query.filter_by(email=email, password=password).first()
+    if not user:
+        # Fallback to old users dict for existing accounts
+        user = User.query.filter_by(username=email, password=password).first()
+
+    if user:
+        if user.status == 'pending':
+            flash("Your account is pending admin approval. Please wait for confirmation.", "warning")
+            return redirect(url_for("home"))
+        elif user.status == 'rejected':
+            flash("Your account has been rejected. Please contact the administrator.", "error")
+            return redirect(url_for("home"))
+        elif user.status == 'suspended':
+            flash("Your account has been suspended. Please contact the administrator.", "error")
+            return redirect(url_for("home"))
+        elif user.status == 'active':
+            # Update last login
+            user.last_login = datetime.now()
+            db.session.commit()
+
+            session["user"] = email
+            session["user_id"] = user.id
+            session["role"] = user.role
+            session["assigned_class"] = user.assigned_class
+            session["full_name"] = user.full_name
+            flash("Login successful!", "success")
+            return redirect(url_for("dashboard"))
+
+    # Fallback to old users dict for backward compatibility
     if email in users and users[email]["password"] == password:
         session["user"] = email
         session["role"] = users[email]["role"]
         return redirect(url_for("dashboard"))
-    else:
-       flash("Invalid login", "error")
-       return redirect(url_for("home"))  
 
+    flash("Invalid login credentials!", "error")
+    return redirect(url_for("home"))
+
+# -------------------------------
+# Teacher Registration
+# -------------------------------
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        # Get form data
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        preferred_class = request.form.get("preferred_class", "")
+        phone = request.form.get("phone", "").strip()
+        message = request.form.get("message", "").strip()
+
+        # Validation
+        if not all([full_name, email, username, password, preferred_class]):
+            flash("Please fill in all required fields.", "error")
+            return render_template("register.html")
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return render_template("register.html")
+
+        if len(password) < 6:
+            flash("Password must be at least 6 characters long.", "error")
+            return render_template("register.html")
+
+        # Check for existing users
+        if User.query.filter_by(email=email).first():
+            flash("Email address already registered.", "error")
+            return render_template("register.html")
+
+        if User.query.filter_by(username=username).first():
+            flash("Username already taken.", "error")
+            return render_template("register.html")
+
+        # Create new user
+        new_user = User(
+            full_name=full_name,
+            email=email,
+            username=username,
+            password=password,  # In production, hash this password
+            role="teacher",
+            preferred_class=preferred_class,
+            phone=phone,
+            registration_message=message,
+            status="pending"
+        )
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+
+            flash("Registration successful! Your account is pending admin approval. You will be notified once approved.", "success")
+            return redirect(url_for("home"))
+
+        except Exception as e:
+            db.session.rollback()
+            flash("Registration failed. Please try again.", "error")
+            return render_template("register.html")
+
+    # GET request - show registration form
+    classes = ["Genesis", "Exodus", "Psalms", "Proverbs", "Revelation", "High Schoolers"]
+    return render_template("register.html", classes=classes)
 
 # -------------------------------
 # Dashboard
@@ -154,10 +297,17 @@ def dashboard():
     if "user" not in session:
         return redirect(url_for("home"))
 
+    user_role = session.get("role")
+    assigned_class = session.get("assigned_class")
+
     today = date.today()
     month = int(request.args.get("month", today.month))
     year = int(request.args.get("year", today.year))
     selected_class = request.args.get("class_name")
+
+    # For teachers, allow viewing all classes but default to their assigned class
+    if user_role == "teacher" and assigned_class and not selected_class:
+        selected_class = assigned_class
 
     sundays = get_sundays(year, month)
 
@@ -1056,6 +1206,174 @@ def auto_attendance_check():
         'total_at_risk': len(students_at_risk)
     }
 
+# -------------------------------
+# Admin Teacher Management
+# -------------------------------
+@app.route('/admin/teachers', methods=['GET'])
+def admin_teachers():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    # Get all users
+    pending_teachers = User.query.filter_by(status='pending', role='teacher').all()
+    active_teachers = User.query.filter_by(status='active', role='teacher').all()
+    suspended_teachers = User.query.filter_by(status='suspended', role='teacher').all()
+    rejected_teachers = User.query.filter_by(status='rejected', role='teacher').all()
+
+    # Get class assignment overview
+    classes = ["Genesis", "Exodus", "Psalms", "Proverbs", "Revelation", "High Schoolers"]
+    class_assignments = {}
+    for class_name in classes:
+        teacher = User.query.filter_by(assigned_class=class_name, status='active').first()
+        student_count = Student.query.filter_by(student_class=class_name, status='active').count()
+        class_assignments[class_name] = {
+            'teacher': teacher,
+            'student_count': student_count
+        }
+
+    return render_template("admin_teachers.html",
+                         pending_teachers=pending_teachers,
+                         active_teachers=active_teachers,
+                         suspended_teachers=suspended_teachers,
+                         rejected_teachers=rejected_teachers,
+                         class_assignments=class_assignments,
+                         classes=classes)
+
+@app.route('/admin/approve-teacher/<int:user_id>', methods=['POST'])
+def approve_teacher(user_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    user = User.query.get_or_404(user_id)
+    assigned_class = request.form.get('assigned_class')
+
+    if not assigned_class:
+        flash("Please select a class to assign the teacher.", "error")
+        return redirect(url_for('admin_teachers'))
+
+    # Check if class already has a teacher
+    existing_teacher = User.query.filter_by(assigned_class=assigned_class, status='active').first()
+    if existing_teacher and existing_teacher.id != user_id:
+        flash(f"Class {assigned_class} already has a teacher assigned ({existing_teacher.full_name}). Please reassign or choose a different class.", "error")
+        return redirect(url_for('admin_teachers'))
+
+    user.status = 'active'
+    user.assigned_class = assigned_class
+    user.approved_by = session.get('user_id')
+    user.approved_at = datetime.now()
+
+    db.session.commit()
+
+    flash(f"Teacher {user.full_name} approved and assigned to {assigned_class} class!", "success")
+    return redirect(url_for('admin_teachers'))
+
+@app.route('/admin/reject-teacher/<int:user_id>', methods=['POST'])
+def reject_teacher(user_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    user = User.query.get_or_404(user_id)
+    rejection_reason = request.form.get('rejection_reason', '')
+
+    user.status = 'rejected'
+    user.approved_by = session.get('user_id')
+    user.approved_at = datetime.now()
+    if rejection_reason:
+        user.registration_message = f"REJECTED: {rejection_reason}"
+
+    db.session.commit()
+
+    flash(f"Teacher registration for {user.full_name} has been rejected.", "warning")
+    return redirect(url_for('admin_teachers'))
+
+@app.route('/admin/suspend-teacher/<int:user_id>', methods=['POST'])
+def suspend_teacher(user_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    user = User.query.get_or_404(user_id)
+    user.status = 'suspended'
+
+    db.session.commit()
+
+    flash(f"Teacher {user.full_name} has been suspended.", "warning")
+    return redirect(url_for('admin_teachers'))
+
+@app.route('/admin/reactivate-teacher/<int:user_id>', methods=['POST'])
+def reactivate_teacher(user_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    user = User.query.get_or_404(user_id)
+    assigned_class = request.form.get('assigned_class')
+
+    if not assigned_class:
+        flash("Please select a class to assign the teacher.", "error")
+        return redirect(url_for('admin_teachers'))
+
+    user.status = 'active'
+    user.assigned_class = assigned_class
+
+    db.session.commit()
+
+    flash(f"Teacher {user.full_name} has been reactivated and assigned to {assigned_class}!", "success")
+    return redirect(url_for('admin_teachers'))
+
+@app.route('/admin/reassign-teacher/<int:user_id>', methods=['POST'])
+def reassign_teacher(user_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    user = User.query.get_or_404(user_id)
+    new_class = request.form.get('new_class')
+
+    if not new_class:
+        flash("Please select a new class.", "error")
+        return redirect(url_for('admin_teachers'))
+
+    old_class = user.assigned_class
+    user.assigned_class = new_class
+
+    db.session.commit()
+
+    flash(f"Teacher {user.full_name} reassigned from {old_class} to {new_class}!", "success")
+    return redirect(url_for('admin_teachers'))
+
+# -------------------------------
+# Admin Student Deletion
+# -------------------------------
+@app.route('/admin/delete-student/<int:student_id>', methods=['POST'])
+def delete_student(student_id):
+    if not session.get("role") == "admin":
+        flash("Access denied. Only admins can delete students.", "danger")
+        return redirect(url_for("dashboard"))
+
+    student = Student.query.get_or_404(student_id)
+    student_name = student.name
+    student_class = student.student_class
+
+    try:
+        # Delete associated attendance records first (to maintain referential integrity)
+        Attendance.query.filter_by(student_id=student_id).delete()
+
+        # Delete the student
+        db.session.delete(student)
+        db.session.commit()
+
+        flash(f"Student '{student_name}' from {student_class} class has been permanently deleted.", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting student: {str(e)}", "error")
+
+    return redirect(url_for("dashboard", class_name=student_class))
+
 @app.route('/generate_report')
 def generate_report():
     if not session.get("role") == "admin":
@@ -1185,6 +1503,7 @@ def inventory_excel_report():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        create_default_users()
     app.run(debug=True)
 
 
