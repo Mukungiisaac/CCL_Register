@@ -5,6 +5,9 @@ from flask_sqlalchemy import SQLAlchemy
 import pandas as pd
 from io import BytesIO
 from xhtml2pdf import pisa
+import os
+from werkzeug.utils import secure_filename
+from PIL import Image
 
 # -------------------------------
 # Flask App Config
@@ -18,6 +21,27 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 # -------------------------------
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///church_register.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Image upload configuration
+UPLOAD_FOLDER = 'static/uploads/profiles'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Create upload directory if it doesn't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def resize_image(image_path, max_size=(200, 200)):
+    """Resize image to max_size while maintaining aspect ratio"""
+    try:
+        with Image.open(image_path) as img:
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            img.save(image_path, optimize=True, quality=85)
+    except Exception as e:
+        print(f"Error resizing image: {e}")
+
 db = SQLAlchemy(app)
 
 # -------------------------------
@@ -32,6 +56,8 @@ class Student(db.Model):
     student_class = db.Column(db.String(50))
     status = db.Column(db.String(10), default="active")
     deletion_requested = db.Column(db.Boolean, default=False)
+    profile_image = db.Column(db.String(200))  # Store image filename
+    family_id = db.Column(db.String(50))  # For grouping family members
 
          #Attebndance Model
 class Attendance(db.Model):
@@ -51,6 +77,20 @@ class Inventory(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, default=0)
     description = db.Column(db.String(200))
+    date_added = db.Column(db.DateTime, default=datetime.now)
+    last_checked = db.Column(db.DateTime, default=datetime.now)
+    notes = db.Column(db.Text)  # For missing items explanations
+
+class InventoryAudit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('inventory.id'), nullable=False)
+    action = db.Column(db.String(50), nullable=False)  # 'added', 'deleted', 'found', 'missing'
+    date = db.Column(db.DateTime, default=datetime.now)
+    user = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+
+    # Relationship
+    item = db.relationship('Inventory', backref=db.backref('audit_logs', lazy=True))
 
 # -------------------------------
 # Dummy Users
@@ -141,13 +181,43 @@ def dashboard():
     else:
         filtered_students = Student.query.filter_by(status="active").all()
 
+    # Check for students at risk of deactivation (for admin notification)
+    at_risk_count = 0
+    if session.get("role") == "admin":
+        # Get the last 4 Sundays for at-risk check
+        today = datetime.now()
+        check_sundays = []
+        current_date = today
+
+        for _ in range(4):
+            days_back = (current_date.weekday() + 1) % 7
+            if days_back == 0 and current_date.date() == today.date():
+                days_back = 7
+
+            sunday = current_date - timedelta(days=days_back)
+            check_sundays.append(sunday.date())
+            current_date = sunday - timedelta(days=1)
+
+        # Count students at risk (all active students, not just filtered)
+        all_active_students = Student.query.filter_by(status='active').all()
+        for student in all_active_students:
+            missed_count = 0
+            for sunday in check_sundays:
+                attendance = Attendance.query.filter_by(student_id=student.id, date=sunday).first()
+                if not attendance or not attendance.present:
+                    missed_count += 1
+
+            if missed_count >= 3:  # At risk if missed 3+ Sundays
+                at_risk_count += 1
+
     return render_template("dashboard.html",
                            students=filtered_students,
                            sundays=sundays,
                            month=month,
                            year=year,
                            selected_class=selected_class,
-                           current_sunday=current_sunday)
+                           current_sunday=current_sunday,
+                           at_risk_count=at_risk_count)
 
 # -------------------------------
 # Add Student
@@ -158,6 +228,7 @@ def add_student():
     dob = request.form["dob"]
     parent = request.form.get("parent", "")
     contact = request.form.get("contact", "")
+    family_id = request.form.get("family_id", "")
 
     birth = datetime.strptime(dob, "%Y-%m-%d")
     today = datetime.now()
@@ -181,12 +252,32 @@ def add_student():
     else:
         assigned_class = "High Schoolers"
 
+    # Handle profile image upload
+    profile_image_filename = None
+    if 'profile_image' in request.files:
+        file = request.files['profile_image']
+        if file and file.filename != '' and allowed_file(file.filename):
+            # Create unique filename
+            timestamp = int(datetime.now().timestamp())
+            filename = secure_filename(f"{timestamp}_{file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+            try:
+                file.save(filepath)
+                # Resize image to save space
+                resize_image(filepath)
+                profile_image_filename = filename
+            except Exception as e:
+                flash(f"Error uploading image: {str(e)}", "warning")
+
     student = Student(
         name=name,
         dob=dob,
         parent=parent,
         contact=contact,
-        student_class=assigned_class
+        student_class=assigned_class,
+        profile_image=profile_image_filename,
+        family_id=family_id if family_id else None
     )
 
     db.session.add(student)
@@ -194,6 +285,8 @@ def add_student():
 
     flash("Student registered successfully!", "success")
     return redirect(url_for("dashboard"))
+
+
 
 # -------------------------------
 # Logout
@@ -421,25 +514,82 @@ def attendance_pdf():
     filename = f"Attendance_{selected_class or 'All'}_{month}_{year}.pdf"
     return send_file(pdf, download_name=filename, as_attachment=True)
 
-@app.route("/edit_student/<int:student_id>", methods=["GET", "POST"])
-def edit_student(student_id):
-    if "user" not in session or session.get("role") != "admin":
-        flash("Only admins can edit students.", "error")
-        return redirect(url_for("dashboard"))
+@app.route('/get_student/<int:student_id>')
+def get_student(student_id):
+    if "user" not in session:
+        return {"error": "Unauthorized"}, 401
 
     student = Student.query.get_or_404(student_id)
+    return {
+        "id": student.id,
+        "name": student.name,
+        "dob": student.dob,
+        "parent": student.parent,
+        "contact": student.contact,
+        "student_class": student.student_class,
+        "family_id": student.family_id,
+        "profile_image": student.profile_image
+    }
 
-    if request.method == "POST":
-        student.name = request.form["name"]
-        student.dob = request.form["dob"]
-        student.parent = request.form.get("parent", "")
-        student.contact = request.form.get("contact", "")
-        student.student_class = request.form["class"]
-        db.session.commit()
-        flash("Student updated successfully!", "success")
+@app.route('/edit_student', methods=['POST'])
+def edit_student():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
         return redirect(url_for("dashboard"))
 
-    return render_template("edit_student.html", student=student)
+    student_id = request.form.get("student_id")
+    student = Student.query.get_or_404(student_id)
+
+    # Update basic info
+    student.name = request.form.get("name")
+    student.dob = request.form.get("dob")
+    student.parent = request.form.get("parent", "")
+    student.contact = request.form.get("contact", "")
+    student.family_id = request.form.get("family_id", "") or None
+
+    # Handle profile image update
+    if 'profile_image' in request.files:
+        file = request.files['profile_image']
+        if file and file.filename != '' and allowed_file(file.filename):
+            # Delete old image if exists
+            if student.profile_image:
+                old_path = os.path.join(app.config['UPLOAD_FOLDER'], student.profile_image)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+
+            # Save new image
+            timestamp = int(datetime.now().timestamp())
+            filename = secure_filename(f"{timestamp}_{file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+            try:
+                file.save(filepath)
+                resize_image(filepath)
+                student.profile_image = filename
+            except Exception as e:
+                flash(f"Error uploading image: {str(e)}", "warning")
+
+    # Recalculate class based on age
+    birth = datetime.strptime(student.dob, "%Y-%m-%d")
+    today = datetime.now()
+    age = (today - birth).days // 365
+
+    if age <= 5:
+        student.student_class = "Genesis"
+    elif age <= 7:
+        student.student_class = "Exodus"
+    elif age <= 9:
+        student.student_class = "Psalms"
+    elif age <= 11:
+        student.student_class = "Proverbs"
+    elif age <= 13:
+        student.student_class = "Revelation"
+    else:
+        student.student_class = "High Schoolers"
+
+    db.session.commit()
+    flash(f"Student '{student.name}' updated successfully!", "success")
+    return redirect(url_for("dashboard"))
 
 @app.route("/student/<int:student_id>")
 def student_detail(student_id):
@@ -448,7 +598,20 @@ def student_detail(student_id):
         return redirect(url_for("home"))
 
     student = Student.query.get_or_404(student_id)
-    return render_template("student_detail.html", student=student)
+
+    # Calculate age
+    from datetime import datetime
+    birth_date = datetime.strptime(student.dob, "%Y-%m-%d")
+    today = datetime.now()
+    age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+    # Format date for display
+    formatted_date = birth_date.strftime("%B %d, %Y")
+
+    return render_template("student_detail.html",
+                         student=student,
+                         age=age,
+                         formatted_date=formatted_date)
 
 @app.route("/all_students")
 def all_students():
@@ -475,20 +638,29 @@ def inventory():
 
     items = Inventory.query.all()
 
-    # Organize items by type for the template
+    # Get all unique categories dynamically
+    categories = set()
+    for item in items:
+        if item.description and " - QR: " in item.description:
+            category = item.description.split(" - QR: ")[0]
+            # Skip placeholder items when showing categories
+            if not item.item_name.endswith(" Placeholder"):
+                categories.add(category)
+
+    # Organize items by category
     all_items = items
-    chairs = [item for item in items if item.description and 'chair' in item.description.lower()]
-    tables = [item for item in items if item.description and 'table' in item.description.lower()]
-    boards = [item for item in items if item.description and 'board' in item.description.lower()]
-    pencils = [item for item in items if item.description and 'pencil' in item.description.lower()]
+    items_by_category = {}
+
+    for category in categories:
+        items_by_category[category] = [
+            item for item in items
+            if item.description and item.description.startswith(category + " - QR: ")
+        ]
 
     return render_template("inventory.html",
-                         items=items,
                          all_items=all_items,
-                         chairs=chairs,
-                         tables=tables,
-                         boards=boards,
-                         pencils=pencils)
+                         categories=sorted(categories),
+                         items_by_category=items_by_category)
 
 @app.route('/add_item', methods=['POST'])
 def add_item():
@@ -498,7 +670,12 @@ def add_item():
 
     name = request.form.get("name")
     item_type = request.form.get("type")
+    custom_type = request.form.get("custom_type")
     qr_code = request.form.get("qr_code")
+
+    # Use custom type if selected
+    if item_type == "Custom" and custom_type:
+        item_type = custom_type.strip()
 
     if name and item_type:
         # If no QR code provided, generate a unique one
@@ -518,12 +695,26 @@ def add_item():
             flash(f"Item with QR code '{qr_code}' already exists!", "error")
             return redirect(url_for("inventory"))
 
+        # Create new inventory item
         new_item = Inventory(
             item_name=name,
             quantity=1,
-            description=f"{item_type} - QR: {qr_code}"
+            description=f"{item_type} - QR: {qr_code}",
+            date_added=datetime.now(),
+            last_checked=datetime.now()
         )
+
         db.session.add(new_item)
+        db.session.commit()
+
+        # Log the action
+        audit_log = InventoryAudit(
+            item_id=new_item.id,
+            action='added',
+            user=session.get('user', 'Unknown'),
+            notes=f"Item added via {'QR scan' if not qr_code.startswith('AUTO_') else 'manual entry'}"
+        )
+        db.session.add(audit_log)
         db.session.commit()
 
         if qr_code.startswith("AUTO_"):
@@ -534,6 +725,336 @@ def add_item():
         flash("Item name and type are required!", "error")
 
     return redirect(url_for("inventory"))
+
+@app.route('/delete_item/<int:item_id>', methods=['POST'])
+def delete_item(item_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    item = Inventory.query.get_or_404(item_id)
+    item_name = item.item_name
+
+    try:
+        # Log the deletion before deleting
+        audit_log = InventoryAudit(
+            item_id=item.id,
+            action='deleted',
+            user=session.get('user', 'Unknown'),
+            notes=f"Item '{item_name}' deleted by admin"
+        )
+        db.session.add(audit_log)
+
+        db.session.delete(item)
+        db.session.commit()
+        flash(f"Item '{item_name}' deleted successfully!", "success")
+    except Exception as e:
+        flash(f"Error deleting item: {str(e)}", "error")
+
+    return redirect(url_for("inventory"))
+
+@app.route('/add_category', methods=['POST'])
+def add_category():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    category_name = request.form.get("category_name", "").strip()
+
+    if not category_name:
+        flash("Category name is required!", "error")
+        return redirect(url_for("inventory"))
+
+    # Create a placeholder item for the new category to make the tab appear
+    placeholder_item = Inventory(
+        item_name=f"{category_name} Placeholder",
+        quantity=0,
+        description=f"{category_name} - QR: PLACEHOLDER_{int(datetime.now().timestamp())}",
+        date_added=datetime.now(),
+        last_checked=datetime.now(),
+        notes="Placeholder item to create category tab. Add real items to this category."
+    )
+
+    db.session.add(placeholder_item)
+    db.session.commit()
+
+    flash(f"Category '{category_name}' added successfully! You can now add items to this category.", "success")
+    return redirect(url_for("inventory"))
+
+@app.route('/promote_students', methods=['GET', 'POST'])
+def promote_students():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    if request.method == 'POST':
+        promotion_type = request.form.get('promotion_type')
+
+        if promotion_type == 'automatic':
+            # Automatic promotion based on age
+            students = Student.query.filter_by(status='active').all()
+            promoted_count = 0
+
+            for student in students:
+                birth_date = datetime.strptime(student.dob, "%Y-%m-%d")
+                today = datetime.now()
+                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+                # Determine correct class based on current age
+                if age <= 5:
+                    new_class = "Genesis"
+                elif age <= 7:
+                    new_class = "Exodus"
+                elif age <= 9:
+                    new_class = "Psalms"
+                elif age <= 11:
+                    new_class = "Proverbs"
+                elif age <= 13:
+                    new_class = "Revelation"
+                else:
+                    new_class = "High Schoolers"
+
+                # Only update if class needs to change
+                if student.student_class != new_class:
+                    old_class = student.student_class
+                    student.student_class = new_class
+                    promoted_count += 1
+
+                    # Log the promotion
+                    print(f"Promoted {student.name} from {old_class} to {new_class} (Age: {age})")
+
+            db.session.commit()
+            flash(f"Successfully promoted {promoted_count} students to age-appropriate classes!", "success")
+
+        elif promotion_type == 'manual':
+            # Manual promotion for selected students
+            selected_students = request.form.getlist('student_ids')
+            new_class = request.form.get('new_class')
+
+            if not selected_students or not new_class:
+                flash("Please select students and a target class.", "error")
+                return redirect(url_for('promote_students'))
+
+            promoted_count = 0
+            for student_id in selected_students:
+                student = Student.query.get(student_id)
+                if student:
+                    old_class = student.student_class
+                    student.student_class = new_class
+                    promoted_count += 1
+                    print(f"Manually moved {student.name} from {old_class} to {new_class}")
+
+            db.session.commit()
+            flash(f"Successfully moved {promoted_count} students to {new_class}!", "success")
+
+        return redirect(url_for('promote_students'))
+
+    # GET request - show promotion interface
+    students = Student.query.filter_by(status='active').all()
+
+    # Calculate age and suggested class for each student
+    student_data = []
+    for student in students:
+        birth_date = datetime.strptime(student.dob, "%Y-%m-%d")
+        today = datetime.now()
+        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+        # Determine suggested class based on age
+        if age <= 5:
+            suggested_class = "Genesis"
+        elif age <= 7:
+            suggested_class = "Exodus"
+        elif age <= 9:
+            suggested_class = "Psalms"
+        elif age <= 11:
+            suggested_class = "Proverbs"
+        elif age <= 13:
+            suggested_class = "Revelation"
+        else:
+            suggested_class = "High Schoolers"
+
+        needs_promotion = student.student_class != suggested_class
+
+        student_data.append({
+            'student': student,
+            'age': age,
+            'current_class': student.student_class,
+            'suggested_class': suggested_class,
+            'needs_promotion': needs_promotion
+        })
+
+    # Sort by those needing promotion first
+    student_data.sort(key=lambda x: (not x['needs_promotion'], x['student'].name))
+
+    classes = ["Genesis", "Exodus", "Psalms", "Proverbs", "Revelation", "High Schoolers"]
+
+    return render_template("promote_students.html",
+                         student_data=student_data,
+                         classes=classes)
+
+@app.route('/manage_status', methods=['GET', 'POST'])
+def manage_status():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        selected_students = request.form.getlist('student_ids')
+
+        if not selected_students:
+            flash("Please select at least one student.", "error")
+            return redirect(url_for('manage_status'))
+
+        updated_count = 0
+        for student_id in selected_students:
+            student = Student.query.get(student_id)
+            if student:
+                if action == 'activate':
+                    student.status = 'active'
+                elif action == 'deactivate':
+                    student.status = 'inactive'
+                updated_count += 1
+
+        db.session.commit()
+        status_text = "activated" if action == 'activate' else "deactivated"
+        flash(f"Successfully {status_text} {updated_count} students!", "success")
+
+        return redirect(url_for('manage_status'))
+
+    # GET request - show status management interface
+    students = Student.query.all()
+    active_students = [s for s in students if s.status == 'active']
+    inactive_students = [s for s in students if s.status == 'inactive']
+
+    return render_template("manage_status.html",
+                         active_students=active_students,
+                         inactive_students=inactive_students)
+
+@app.route('/check_attendance_deactivation', methods=['POST'])
+def check_attendance_deactivation():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    # Get the last 4 Sundays
+    today = datetime.now()
+    sundays = []
+    current_date = today
+
+    # Find the last 4 Sundays
+    for _ in range(4):
+        # Go back to find the most recent Sunday
+        days_back = (current_date.weekday() + 1) % 7
+        if days_back == 0 and current_date.date() == today.date():
+            days_back = 7  # If today is Sunday, go back to previous Sunday
+
+        sunday = current_date - timedelta(days=days_back)
+        sundays.append(sunday.date())
+        current_date = sunday - timedelta(days=1)  # Move to day before this Sunday
+
+    # Get all active students
+    active_students = Student.query.filter_by(status='active').all()
+    deactivated_count = 0
+    deactivated_students = []
+
+    for student in active_students:
+        # Check attendance for the last 4 Sundays
+        missed_count = 0
+        attendance_details = []
+
+        for sunday in sundays:
+            attendance = Attendance.query.filter_by(
+                student_id=student.id,
+                date=sunday
+            ).first()
+
+            if not attendance or not attendance.present:
+                missed_count += 1
+                attendance_details.append(f"{sunday.strftime('%m/%d/%Y')}: Absent")
+            else:
+                attendance_details.append(f"{sunday.strftime('%m/%d/%Y')}: Present")
+
+        # If student missed all 4 Sundays, deactivate them
+        if missed_count >= 4:
+            student.status = 'inactive'
+            deactivated_count += 1
+            deactivated_students.append({
+                'name': student.name,
+                'class': student.student_class,
+                'attendance': attendance_details
+            })
+
+            print(f"Auto-deactivated {student.name} for missing {missed_count}/4 Sundays")
+
+    db.session.commit()
+
+    if deactivated_count > 0:
+        flash(f"Automatically deactivated {deactivated_count} students for missing 4+ consecutive Sundays. They can be reactivated when they return.", "warning")
+
+        # Log the deactivations for admin review
+        for student_info in deactivated_students:
+            print(f"DEACTIVATED: {student_info['name']} ({student_info['class']})")
+            for attendance_line in student_info['attendance']:
+                print(f"  - {attendance_line}")
+    else:
+        flash("No students needed automatic deactivation based on attendance.", "info")
+
+    return redirect(url_for("manage_status"))
+
+@app.route('/auto_attendance_check')
+def auto_attendance_check():
+    """Automatic check that can be called periodically"""
+    if not session.get("role") == "admin":
+        return {"error": "Access denied"}, 403
+
+    # Get the last 4 Sundays
+    today = datetime.now()
+    sundays = []
+    current_date = today
+
+    for _ in range(4):
+        days_back = (current_date.weekday() + 1) % 7
+        if days_back == 0 and current_date.date() == today.date():
+            days_back = 7
+
+        sunday = current_date - timedelta(days=days_back)
+        sundays.append(sunday.date())
+        current_date = sunday - timedelta(days=1)
+
+    active_students = Student.query.filter_by(status='active').all()
+    students_at_risk = []
+
+    for student in active_students:
+        missed_count = 0
+        recent_attendance = []
+
+        for sunday in sundays:
+            attendance = Attendance.query.filter_by(
+                student_id=student.id,
+                date=sunday
+            ).first()
+
+            if not attendance or not attendance.present:
+                missed_count += 1
+                recent_attendance.append({"date": sunday.strftime('%m/%d'), "present": False})
+            else:
+                recent_attendance.append({"date": sunday.strftime('%m/%d'), "present": True})
+
+        if missed_count >= 3:  # At risk if missed 3+ (will be deactivated at 4)
+            students_at_risk.append({
+                'id': student.id,
+                'name': student.name,
+                'class': student.student_class,
+                'missed_count': missed_count,
+                'attendance': recent_attendance,
+                'will_deactivate': missed_count >= 4
+            })
+
+    return {
+        'students_at_risk': students_at_risk,
+        'total_at_risk': len(students_at_risk)
+    }
 
 @app.route('/generate_report')
 def generate_report():

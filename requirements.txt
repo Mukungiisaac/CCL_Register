@@ -4,3 +4,5 @@ pandas
 openpyxl
 xhtml2pdf
 markupsafe
+Pillow
+werkzeug
