@@ -476,7 +476,7 @@
 
                         data.students_at_risk.forEach(student => {
                             const attendanceIcons = student.attendance.map(att =>
-                                `<span style="margin: 0 2px;">${att.present ? '✅' : '❌'} ${att.date}</span>`
+                                `<span style="margin: 0 2px;">${att.present ? '<i class="fas fa-check-circle" style="color:green;"></i>' : '<i class="fas fa-times-circle" style="color:red;"></i>'} ${att.date}</span>`
                             ).join(' ');
 
                             const warningClass = student.will_deactivate ? 'style="background: #f8d7da; padding: 10px; border-radius: 5px; margin: 5px 0;"' : 'style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 5px 0;"';

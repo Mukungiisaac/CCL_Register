@@ -294,7 +294,7 @@
                         <td>
                             <button onclick="deleteItem({{ item.id }}, '{{ item.item_name }}')"
                                     style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
-                                🗑️ Delete
+                                <i class="fas fa-trash"></i> Delete
                             </button>
                         </td>
                     </tr>
@@ -340,7 +340,7 @@
                             <td>
                                 <button onclick="deleteItem({{ item.id }}, '{{ item.item_name }}')"
                                         style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
-                                    🗑️ Delete
+                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             </td>
                         </tr>
@@ -382,10 +382,10 @@
 
         <div class="report-buttons">
             <a href="{{ url_for('inventory_pdf_report') }}" class="report-btn">
-                📄 Download PDF Report
+                <i class="fas fa-file-pdf"></i> Download PDF Report
             </a>
             <a href="{{ url_for('inventory_excel_report') }}" class="report-btn">
-                📊 Download Excel Report
+                <i class="fas fa-file-excel"></i> Download Excel Report
             </a>
         </div>
     </div>

@@ -7,27 +7,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body {
-            background-color: #f8f8f8;
-            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
         }
 
-        .container {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 30px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
         }
 
-        .header-bar {
+        .header-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            margin-bottom: 20px;
+            gap: 20px;
         }
 
         .header-left {
@@ -36,147 +42,406 @@
             gap: 15px;
         }
 
-        .page-title {
-            font-size: 24px;
-            color: #D32F2F;
-            margin: 0;
-        }
-
         .btn-back {
-            background-color: #D32F2F;
-            color: #fff;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
             text-decoration: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-        }
-
-        .filter-form {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .filter-form select {
-            padding: 6px 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26,26,46,0.3);
+            color: white;
         }
 
-        .filter-form button {
-            background-color: #D32F2F;
+        .page-title {
+            font-size: 28px;
+            color: #1a1a2e;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .search-filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 2px solid #e4e8ec;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #1a1a2e;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e4e8ec;
+            border-radius: 8px;
+            font-size: 15px;
+            min-width: 180px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #1a1a2e;
+        }
+
+        .btn-filter {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
             color: white;
             border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
-            font-size: 14px;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 15px;
             cursor: pointer;
+            font-weight: 500;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .students-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .students-list-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1fr 100px;
+            gap: 15px;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .student-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1fr 100px;
+            gap: 15px;
+            padding: 18px 25px;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .student-row:hover {
+            background: #f8f9fa;
+        }
+
+        .student-row:last-child {
+            border-bottom: none;
+        }
+
+        .student-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e4e8ec;
+            flex-shrink: 0;
+        }
+
+        .student-avatar-placeholder {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .student-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .student-name {
+            font-size: 18px;
+            color: #1a1a2e;
+            margin: 0 0 8px;
+            font-weight: 600;
+        }
+
+        .student-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-item i {
+            color: #1a1a2e;
+        }
+
+        .class-badge {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
             margin-top: 15px;
         }
 
-        th, td {
-            padding: 12px 10px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-
-        th {
-            background-color: #D32F2F;
-            color: #fff;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        .action-btns a {
-            margin: 0 5px;
-            color: #007bff;
-            font-size: 1
+        .btn-action {
+            padding: 8px 16px;
+            border-radius: 6px;
             text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
 
-        .action-btns a:hover {
-            color: #0056b3;
+        .btn-view {
+            background: #e4e8ec;
+            color: #1a1a2e;
+        }
+
+        .btn-view:hover {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #16213e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: #1a1a2e;
+            margin: 0 0 10px;
+        }
+
+        .results-count {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
         }
 
         @media (max-width: 768px) {
-            .header-bar {
+            .header-top {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 10px;
             }
 
-            .filter-form {
-                width: 100%;
-                justify-content: flex-start;
+            .search-filter-row {
+                flex-direction: column;
+            }
+
+            .students-list-header {
+                display: none;
+            }
+
+            .student-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .student-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-
-    <!-- Top Header Section -->
-    <div class="header-bar">
-        <div class="header-left">
-            <a href="{{ url_for('dashboard') }}" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
-            <h1 class="page-title">
-                All Registered Students{% if selected_class %} - {{ selected_class }}{% endif %}
-            </h1>
+<div class="page-container">
+    <div class="header-card">
+        <div class="header-top">
+            <div class="header-left">
+                <a href="{{ url_for('dashboard') }}" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Dashboard
+                </a>
+                <h1 class="page-title">
+                    All Students
+                </h1>
+            </div>
+            <div class="results-count">
+                Showing {{ students|length }} student{{ '' if students|length == 1 else 's' }}
+            </div>
         </div>
 
-        <form method="get" action="{{ url_for('all_students') }}" class="filter-form">
-            <label for="class_name">Filter by Class:</label>
-            <select name="class_name" id="class_name">
-                <option value="">-- All Classes --</option>
+        <form method="get" action="{{ url_for('all_students') }}" class="search-filter-row">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       name="search" 
+                       id="searchInput"
+                       placeholder="Search by name, parent, or contact..." 
+                       value="{{ search_query or '' }}">
+            </div>
+            <select name="class_name" class="filter-select">
+                <option value="">All Classes</option>
                 {% for cls in class_list %}
                     <option value="{{ cls }}" {% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
                 {% endfor %}
             </select>
-            <button type="submit">Filter</button>
+            <button type="submit" class="btn-filter">
+                <i class="fas fa-filter"></i> Filter
+            </button>
         </form>
     </div>
 
-    <!-- Student Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Class</th>
-                <th>DOB</th>
-                <th>Parent</th>
-                <th>Contact</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for student in students %}
-            <tr>
-                <td>{{ student.name }}</td>
-                <td>{{ student.student_class }}</td>
-                <td>{{ student.dob }}</td>
-                <td>{{ student.parent }}</td>
-                <td>{{ student.contact }}</td>
-                <td class="action-btns">
-                    <a href="{{ url_for('student_detail', student_id=student.id) }}" title="View"><i class="fas fa-eye"></i></a>
-                    {% if session['role'] == 'admin' %}
-                        <a href="{{ url_for('edit_student', student_id=student.id) }}" title="Edit"><i class="fas fa-pen-to-square"></i></a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+    {% if students %}
+    <div class="students-list" id="studentsList">
+        <div class="students-list-header">
+            <div><i class="fas fa-user"></i> Student Name</div>
+            <div><i class="fas fa-school"></i> Class</div>
+            <div><i class="fas fa-birthday-cake"></i> DOB</div>
+            <div><i class="fas fa-user-friend"></i> Parent</div>
+            <div><i class="fas fa-phone"></i> Contact</div>
+            <div><i class="fas fa-cogs"></i> Actions</div>
+        </div>
+        {% for student in students %}
+        <div class="student-row" data-name="{{ student.name.lower() }}" data-parent="{{ (student.parent or '').lower() }}" data-contact="{{ (student.contact or '').lower() }}">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                {% if student.profile_image %}
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + student.profile_image) }}" 
+                         alt="{{ student.name }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #1a1a2e; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+                <span style="font-weight: 600; color: #1a1a2e;">{{ student.name }}</span>
+            </div>
+            <div><span class="class-badge">{{ student.student_class }}</span></div>
+            <div style="color: #666;">{{ student.dob }}</div>
+            <div style="color: #666;">{{ student.parent or '-' }}</div>
+            <div style="color: #666;">{{ student.contact or '-' }}</div>
+            <div style="display: flex; gap: 8px;">
+                <a href="{{ url_for('student_detail', student_id=student.id) }}" style="padding: 6px 10px; background: #1a1a2e; color: white; border-radius: 4px; text-decoration: none; font-size: 12px;">
+                    <i class="fas fa-eye"></i>
+                </a>
+                {% if session['role'] == 'admin' %}
+                <a href="{{ url_for('edit_student', student_id=student.id) }}" style="padding: 6px 10px; background: #28a745; color: white; border-radius: 4px; text-decoration: none; font-size: 12px;">
+                    <i class="fas fa-edit"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="header-card">
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h3>No Students Found</h3>
+            <p>No students match your search criteria. Try adjusting your search or filter.</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<script>
+    // Client-side search for instant filtering
+    const searchInput = document.getElementById('searchInput');
+    const studentRows = document.querySelectorAll('.student-row');
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        
+        studentRows.forEach(row => {
+            const name = row.dataset.name || '';
+            const parent = row.dataset.parent || '';
+            const contact = row.dataset.contact || '';
+            
+            if (searchTerm === '' || 
+                name.includes(searchTerm) || 
+                parent.includes(searchTerm) || 
+                contact.includes(searchTerm)) {
+                row.style.display = 'grid';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Update results count
+        const visibleRows = document.querySelectorAll('.student-row[style="display: grid;"]');
+        const countEl = document.querySelector('.results-count');
+        if (countEl && searchTerm !== '') {
+            countEl.textContent = 'Showing ' + visibleRows.length + ' students';
+        }
+    });
+
+    // Also handle form submission for class filter
+    document.querySelector('.filter-select').addEventListener('change', function() {
+        this.closest('form').submit();
+    });
+</script>
 
 </body>
 </html>

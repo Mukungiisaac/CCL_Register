@@ -22,8 +22,10 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///church_register.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Image upload configuration
-UPLOAD_FOLDER = 'static/uploads/profiles'
+# Image upload configuration - use absolute path
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'profiles')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -59,10 +61,10 @@ class Student(db.Model):
     profile_image = db.Column(db.String(200))  # Store image filename
     family_id = db.Column(db.String(50))  # For grouping family members
 
-         #Attebndance Model
+         # Attendance Model
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey(Student.id), nullable=False)
     date = db.Column(db.Date, nullable=False)
     present = db.Column(db.Boolean, default=True)
 
@@ -213,11 +215,8 @@ def login():
             flash("Login successful!", "success")
             return redirect(url_for("dashboard"))
 
-    # Fallback to old users dict for backward compatibility
-    if email in users and users[email]["password"] == password:
-        session["user"] = email
-        session["role"] = users[email]["role"]
-        return redirect(url_for("dashboard"))
+    # Removed deprecated users dict fallback - users are now managed in database
+    # The database query above handles all user authentication
 
     flash("Invalid login credentials!", "error")
     return redirect(url_for("home"))
@@ -596,7 +595,7 @@ def download_attendance():
     for student in students:
         row = {"Name": student.name}
         for sunday in sundays:
-            status = "✔" if attendance_map.get((student.id, sunday), False) else "❌"
+            status = "P" if attendance_map.get((student.id, sunday), False) else "A"
             row[sunday.strftime('%d %b')] = status
         data.append(row)
 
@@ -750,7 +749,6 @@ def student_detail(student_id):
     student = Student.query.get_or_404(student_id)
 
     # Calculate age
-    from datetime import datetime
     birth_date = datetime.strptime(student.dob, "%Y-%m-%d")
     today = datetime.now()
     age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
@@ -770,15 +768,30 @@ def all_students():
         return redirect(url_for("home"))
 
     selected_class = request.args.get("class_name")
+    search_query = request.args.get("search", "").strip()
     
-    class_list = ['Genesis', 'Exodus', 'Psalms', 'Proverbs', 'Revelation', 'High Schoolers']  # ✅ Make sure this is included
+    class_list = ['Genesis', 'Exodus', 'Psalms', 'Proverbs', 'Revelation', 'High Schoolers']
 
+    # Base query - always filter by active status
+    query = Student.query.filter_by(status="active")
+
+    # Apply class filter
     if selected_class:
-        students = Student.query.filter_by(status="active", student_class=selected_class).order_by(Student.name).all()
-    else:
-        students = Student.query.filter_by(status="active").order_by(Student.name).all()
+        query = query.filter_by(student_class=selected_class)
 
-    return render_template("all_students.html", students=students, selected_class=selected_class, class_list=class_list)
+    # Get students
+    students = query.order_by(Student.name).all()
+
+    # Apply search filter on the list (for name, parent, contact)
+    if search_query:
+        search_lower = search_query.lower()
+        students = [s for s in students if 
+            search_lower in s.name.lower() or
+            (s.parent and search_lower in s.parent.lower()) or
+            (s.contact and search_lower in s.contact.lower())
+        ]
+
+    return render_template("all_students.html", students=students, selected_class=selected_class, class_list=class_list, search_query=search_query)
 
 @app.route('/inventory')
 def inventory():

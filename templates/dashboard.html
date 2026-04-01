@@ -9,10 +9,11 @@
 <body>
 
 <div class="container">
-    <div class="sidebar-toggle" id="sidebarToggle">☰</div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar-toggle" id="sidebarToggle" title="Open Menu"><i class="fas fa-bars"></i> Menu</div>
 
 <aside class="sidebar" id="sidebar">
-    <div class="sidebar-close" id="sidebarClose">&times;</div>
+    <div class="sidebar-close" id="sidebarClose" title="Close Menu">&times;</div>
     <div class="logo-wrapper">
         <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo" style="margin-bottom: 20px; margin-left: 0; height: 80px; width: 80px; border-radius: 50%;">
     </div>
@@ -21,18 +22,18 @@
         <div class="class-navigation">
             {% if session.get('role') == 'admin' %}
                 <a href="{{ url_for('dashboard') }}" class="class-tab {{ 'active' if not selected_class else '' }}">📋 All Students</a>
-                <a href="{{ url_for('dashboard', class_name='Genesis') }}" class="class-tab {{ 'active' if selected_class == 'Genesis' else '' }}">🌱 Genesis</a>
-                <a href="{{ url_for('dashboard', class_name='Exodus') }}" class="class-tab {{ 'active' if selected_class == 'Exodus' else '' }}">🚶 Exodus</a>
-                <a href="{{ url_for('dashboard', class_name='Psalms') }}" class="class-tab {{ 'active' if selected_class == 'Psalms' else '' }}">🎵 Psalms</a>
-                <a href="{{ url_for('dashboard', class_name='Proverbs') }}" class="class-tab {{ 'active' if selected_class == 'Proverbs' else '' }}">💡 Proverbs</a>
-                <a href="{{ url_for('dashboard', class_name='Revelation') }}" class="class-tab {{ 'active' if selected_class == 'Revelation' else '' }}">⭐ Revelation</a>
-                <a href="{{ url_for('dashboard', class_name='High Schoolers') }}" class="class-tab {{ 'active' if selected_class == 'High Schoolers' else '' }}">🎓 High School</a>
+                <a href="{{ url_for('dashboard', class_name='Genesis') }}" class="class-tab {{ 'active' if selected_class == 'Genesis' else '' }}"><i class="fas fa-leaf"></i> Genesis</a>
+                <a href="{{ url_for('dashboard', class_name='Exodus') }}" class="class-tab {{ 'active' if selected_class == 'Exodus' else '' }}"><i class="fas fa-walking"></i> Exodus</a>
+                <a href="{{ url_for('dashboard', class_name='Psalms') }}" class="class-tab {{ 'active' if selected_class == 'Psalms' else '' }}"><i class="fas fa-music"></i> Psalms</a>
+                <a href="{{ url_for('dashboard', class_name='Proverbs') }}" class="class-tab {{ 'active' if selected_class == 'Proverbs' else '' }}"><i class="fas fa-lightbulb"></i> Proverbs</a>
+                <a href="{{ url_for('dashboard', class_name='Revelation') }}" class="class-tab {{ 'active' if selected_class == 'Revelation' else '' }}"><i class="fas fa-star"></i> Revelation</a>
+                <a href="{{ url_for('dashboard', class_name='High Schoolers') }}" class="class-tab {{ 'active' if selected_class == 'High Schoolers' else '' }}"><i class="fas fa-graduation-cap"></i> High School</a>
             {% elif session.get('role') == 'teacher' %}
                 {% set assigned_class = session.get('assigned_class') %}
                 <a href="{{ url_for('dashboard') }}" class="class-tab {{ 'active' if not selected_class else '' }}">📋 All Students</a>
                 <a href="{{ url_for('dashboard', class_name='Genesis') }}"
                    class="class-tab {{ 'active' if selected_class == 'Genesis' else '' }} {{ 'my-class' if assigned_class == 'Genesis' else 'view-only' }}">
-                   🌱 Genesis {{ '(My Class)' if assigned_class == 'Genesis' else '(View Only)' }}
+                   <i class="fas fa-leaf"></i> Genesis {{ '(My Class)' if assigned_class == 'Genesis' else '(View Only)' }}
                 </a>
                 <a href="{{ url_for('dashboard', class_name='Exodus') }}"
                    class="class-tab {{ 'active' if selected_class == 'Exodus' else '' }} {{ 'my-class' if assigned_class == 'Exodus' else 'view-only' }}">
@@ -60,9 +61,9 @@
         </div>
 
         <div class="sidebar-links">
-           <a href="{{ url_for('attendance_report') }}" class="sidebar-link">📊 Attendance Report</a>
+           <a href="{{ url_for('attendance_report') }}" class="sidebar-link"><i class="fas fa-clipboard-list"></i> Attendance Report</a>
            {% if session.get('role') == 'admin' %}
-           <a href="{{ url_for('inventory') }}" class="sidebar-link">📦 Inventory</a>
+           <a href="{{ url_for('inventory') }}" class="sidebar-link"><i class="fas fa-box"></i> Inventory</a>
            {% endif %}
         </div>
 
@@ -329,11 +330,11 @@
                     <img src="{{ url_for('static', filename='uploads/profiles/' + student.profile_image) }}"
                          alt="{{ student.name }}"
                          onclick="showLargeImage('{{ url_for('static', filename='uploads/profiles/' + student.profile_image) }}')"
-                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd; cursor: pointer; transition: transform 0.2s;"
+                         class="student-photo"
                          onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                 {% else %}
                     <div onclick="viewStudent({{ student.id }})" style="width: 40px; height: 40px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 2px solid #ddd; font-size: 18px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">
-                        👤
+                        <i class='fas fa-user'></i>
                     </div>
                 {% endif %}
                 <div>
@@ -390,10 +391,10 @@
 
             {% elif session["role"] == "admin" and student.deletion_requested %}
                 <form action="{{ url_for('approve_delete', student_id=student.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" style="background: green; color: white; border: none; padding: 5px 10px; cursor: pointer;">✔ Approve</button>
+                    <button type="submit" style="background: green; color: white; border: none; padding: 5px 10px; cursor: pointer;"><i class="fas fa-check"></i> Approve</button>
                 </form>
                 <form action="{{ url_for('reject_delete', student_id=student.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" style="background: orange; color: white; border: none; padding: 5px 10px; cursor: pointer;">✖ Reject</button>
+                    <button type="submit" style="background: orange; color: white; border: none; padding: 5px 10px; cursor: pointer;"><i class="fas fa-times"></i> Reject</button>
                 </form>
             {% elif session["role"] == "admin" and not student.deletion_requested %}
                 <button onclick="deleteStudent({{ student.id }}, '{{ student.name }}')"
@@ -412,7 +413,7 @@
                 <td>
           <a href="{{ url_for('student_detail', student_id=student.id) }}"
              style="color: #28a745; text-decoration: none;">
-             <i class="fas fa-eye"></i> <!-- or 👁️ -->
+             <i class="fas fa-eye"></i>
           </a>
         </td>
 
@@ -533,25 +534,35 @@
 const toggleBtn = document.getElementById("sidebarToggle");
 const sidebar = document.getElementById("sidebar");
 const sidebarClose = document.getElementById("sidebarClose");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+function openSidebar() {
+    sidebar.classList.add("active");
+    sidebarOverlay.classList.add("active");
+}
+
+function closeSidebar() {
+    sidebar.classList.remove("active");
+    sidebarOverlay.classList.remove("active");
+}
 
 toggleBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    sidebar.classList.add("active");
+    openSidebar();
 });
 
 sidebarClose.addEventListener("click", (e) => {
     e.stopPropagation();
-    sidebar.classList.remove("active");
+    closeSidebar();
 });
 
-// Only close sidebar if click is outside both sidebar and toggle button
-document.addEventListener("mousedown", function (e) {
-    if (
-        sidebar.classList.contains("active") &&
-        !sidebar.contains(e.target) &&
-        e.target !== toggleBtn
-    ) {
-        sidebar.classList.remove("active");
+// Close when clicking overlay
+sidebarOverlay.addEventListener("click", closeSidebar);
+
+// Also close on Escape key
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && sidebar.classList.contains("active")) {
+        closeSidebar();
     }
 });
 
@@ -574,7 +585,7 @@ function editStudent(studentId) {
                          onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                 `;
             } else {
-                photoDisplay.innerHTML = '<div style="width: 120px; height: 120px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 3px solid #ddd; font-size: 50px; margin: 0 auto;">👤</div>';
+                photoDisplay.innerHTML = '<div style="width: 120px; height: 120px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 3px solid #ddd; font-size: 50px; margin: 0 auto;"><i class="fas fa-user"></i></div>';
             }
 
             // Populate info display
@@ -604,7 +615,7 @@ function editStudent(studentId) {
             if (student.profile_image) {
                 photoDiv.innerHTML = `<img src="/static/uploads/profiles/${student.profile_image}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">`;
             } else {
-                photoDiv.innerHTML = '<div style="width: 80px; height: 80px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 2px solid #ddd; font-size: 30px;">👤</div>';
+                photoDiv.innerHTML = '<div style="width: 80px; height: 80px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 2px solid #ddd; font-size: 30px;"><i class="fas fa-user"></i></div>';
             }
 
             document.getElementById('editStudentModal').style.display = 'block';
@@ -675,7 +686,7 @@ function deleteStudent(studentId, studentName) {
 <div id="editStudentModal" class="modal">
     <div class="modal-content" style="max-width: 700px;">
         <span class="edit-close">&times;</span>
-        <h2 style="margin-bottom: 20px; color: #333;">👤 Student Details & Edit</h2>
+        <h2 style="margin-bottom: 20px; color: #333;"><i class="fas fa-user"></i> Student Details & Edit</h2>
 
         <!-- Student Details View Section -->
         <div id="studentDetailsView" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: center;">
@@ -689,7 +700,7 @@ function deleteStudent(studentId, studentName) {
 
         <!-- Edit Form Section -->
         <div style="border-top: 2px solid #e9ecef; padding-top: 25px;">
-            <h3 style="margin-bottom: 15px; color: #333;">✏️ Edit Information</h3>
+            <h3 style="margin-bottom: 15px; color: #333;"><i class="fas fa-edit"></i> Edit Information</h3>
             <form method="POST" action="{{ url_for('edit_student') }}" enctype="multipart/form-data" id="editStudentForm">
             <input type="hidden" name="student_id" id="editStudentId">
 
@@ -727,7 +738,7 @@ function deleteStudent(studentId, studentName) {
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" onclick="closeEditModal()" style="padding: 12px 24px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-weight: 500;">Cancel</button>
-                <button type="submit" style="padding: 12px 24px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">✏️ Update Student</button>
+                <button type="submit" style="padding: 12px 24px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"><i class="fas fa-save"></i> Update Student</button>
             </div>
         </form>
     </div>
