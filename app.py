@@ -326,9 +326,25 @@ def dashboard():
         current_sunday = today
 
     if selected_class:
-        filtered_students = Student.query.filter_by(student_class=selected_class, status="active").all()
+        if user_role == "admin" and request.args.get("show_all") == "1":
+            filtered_students = Student.query.filter(
+                Student.student_class == selected_class,
+                Student.status == "active"
+            ).all()
+        else:
+            filtered_students = Student.query.filter(
+                Student.student_class == selected_class,
+                Student.status == "active",
+                Student.profile_image != None
+            ).all()
     else:
-        filtered_students = Student.query.filter_by(status="active").all()
+        if user_role == "admin" and request.args.get("show_all") == "1":
+            filtered_students = Student.query.filter_by(status="active").all()
+        else:
+            filtered_students = Student.query.filter(
+                Student.status == "active",
+                Student.profile_image != None
+            ).all()
 
     # Check for students at risk of deactivation (for admin notification)
     at_risk_count = 0
@@ -772,8 +788,8 @@ def all_students():
     
     class_list = ['Genesis', 'Exodus', 'Psalms', 'Proverbs', 'Revelation', 'High Schoolers']
 
-    # Base query - always filter by active status
-    query = Student.query.filter_by(status="active")
+    # Base query - filter by active status AND profile image (only show students with photos)
+    query = Student.query.filter(Student.status == "active", Student.profile_image != None)
 
     # Apply class filter
     if selected_class:
@@ -1165,6 +1181,57 @@ def check_attendance_deactivation():
 
     return redirect(url_for("manage_status"))
 
+@app.route('/delete_sample_students', methods=['POST'])
+def delete_sample_students():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    deleted_count = 0
+    students = Student.query.filter_by(status='active').all()
+
+    for student in students:
+        if not student.profile_image:
+            try:
+                Attendance.query.filter_by(student_id=student.id).delete()
+                db.session.delete(student)
+                deleted_count += 1
+            except Exception as e:
+                print(f"Error deleting student {student.id}: {e}")
+
+    db.session.commit()
+    flash(f"Successfully deleted {deleted_count} students without profile photos!", "success")
+    return redirect(url_for("dashboard"))
+
+
+@app.route('/keep_only_student/<int:student_id>', methods=['POST'])
+def keep_only_student(student_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    keep_student = Student.query.get(student_id)
+    if not keep_student:
+        flash("Student not found.", "error")
+        return redirect(url_for("dashboard"))
+
+    all_students = Student.query.all()
+    deleted_count = 0
+
+    for student in all_students:
+        if student.id != student_id:
+            try:
+                Attendance.query.filter_by(student_id=student.id).delete()
+                db.session.delete(student)
+                deleted_count += 1
+            except Exception as e:
+                print(f"Error deleting student {student.id}: {e}")
+
+    db.session.commit()
+    flash(f"Successfully deleted {deleted_count} students. Only {keep_student.name} remains.", "success")
+    return redirect(url_for("dashboard"))
+
+
 @app.route('/auto_attendance_check')
 def auto_attendance_check():
     """Automatic check that can be called periodically"""
@@ -1513,6 +1580,34 @@ def inventory_excel_report():
 # -------------------------------
 # Run App
 # -------------------------------
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+        create_default_users()
+    app.run(debug=True)
+
+# -------------------------------
+# Delete All Sample Students (Admin)
+# -------------------------------
+@app.route('/admin/delete-sample-students', methods=['POST'])
+def delete_sample_students():
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+    
+    sample_students = Student.query.filter(Student.profile_image == None).all()
+    count = len(sample_students)
+    
+    for student in sample_students:
+        Attendance.query.filter_by(student_id=student.id).delete()
+        db.session.delete(student)
+    
+    db.session.commit()
+    flash(f"Successfully deleted {count} sample students!", "success")
+    return redirect(url_for("dashboard"))
+
+# -------------------------------
+# Run App
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

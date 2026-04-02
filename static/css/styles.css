@@ -91,44 +91,7 @@ input[type="date"]:focus {
     overflow: hidden;
 }
 
-/* === Sidebar === */
-.sidebar {
-    width: 150px;
-    background-color: #212121;
-    color: white;
-    padding: 20px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    overflow-y: auto;
-    z-index: 1000;
-}
-
-.sidebar h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
-    color: #fff;
-}
-
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-}
-
-.sidebar ul li {
-    margin: 10px 0;
-}
-
-.sidebar ul li a {
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.sidebar ul li a:hover {
-    text-decoration: underline;
-}
+/* === Sidebar === (see full sidebar styles below) */
 
 /* === Register Content === */
 .register {
@@ -328,7 +291,7 @@ body.edit-page {
 /* ...existing code... */
 
 /* Mobile styles */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   body, html {
     font-size: 16px;
     padding: 0;
@@ -338,34 +301,6 @@ body.edit-page {
   .container {
     flex-direction: column;
     padding: 0 5px;
-  }
-
-  .sidebar {
-    position: fixed;
-    left: -220px;
-    top: 0;
-    width: 200px;
-    height: 100%;
-    background: #222;
-    z-index: 1000;
-    transition: left 0.3s;
-    padding: 20px 10px;
-  }
-  .sidebar.active {
-    left: 0;
-  }
-  .sidebar-toggle {
-    display: block;
-    position: fixed;
-    left: 10px;
-    top: 10px;
-    font-size: 2em;
-    z-index: 1100;
-    background: #222;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
   }
 
   main.register {
@@ -406,58 +341,6 @@ body.edit-page {
   .flash {
     font-size: 14px;
     padding: 5px;
-  }
-}
-
-
-/* ...existing code... */
-@media (max-width: 600px) {
-  .sidebar {
-    position: fixed;
-    left: -220px;
-    top: 0;
-    width: 200px;
-    height: 100%;
-    background: #222;
-    z-index: 1000;
-    transition: left 0.3s;
-    padding: 20px 10px;
-    overflow-y: auto;
-  }
-  .sidebar.active {
-    left: 0;
-  }
-  .sidebar-toggle {
-    display: block;
-    position: fixed;
-    left: 10px;
-    top: 10px;
-    font-size: 2em;
-    z-index: 1100;
-    background: #222;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  .sidebar-close {
-    display: block;
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    font-size: 2em;
-    color: #fff;
-    cursor: pointer;
-    z-index: 1200;
-  }
-  .container {
-    flex-direction: column;
-    padding: 0 5px;
-  }
-  main.register {
-    margin-left: 0;
-    padding: 10px 0;
-    width: 100%;
   }
 }
 
@@ -547,137 +430,248 @@ img.student-photo, img.profile-image { margin: 0 auto; display: block; }
 /* Table cell photo centering */  
 td img.student-photo { display: block; margin-left: auto; margin-right: auto; text-align: center; } 
   
-/* Collapsible Menu Sidebar - Always Visible */  
-.sidebar {  
-    position: fixed;  
-    left: -250px;  
-    width: 250px;  
-    height: 100vh;  
-    transition: left 0.3s ease;  
-    z-index: 1000;  
-}  
-.sidebar.active {  
-    left: 0;  
-}  
-.sidebar-toggle {  
-    display: block !important;  
-    position: fixed;  
-    top: 10px;  
-    left: 10px;  
-    z-index: 1001;  
-    cursor: pointer;  
-    font-size: 24px;  
-    color: #333;  
-    background: #fff;  
-    padding: 8px 12px;  
-    border-radius: 4px;  
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);  
-}  
-.sidebar-close {  
-    display: block !important;  
-    position: absolute;  
-    top: 10px;  
-    right: 10px;  
-    font-size: 24px;  
-    cursor: pointer;  
-    color: #fff;  
-} 
-  
-/* Professional Sidebar Menu */  
-.sidebar {  
-    position: fixed;  
-    left: -280px;  
-    top: 0;  
-    width: 280px;  
-    height: 100vh;  
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);  
-    padding: 60px 20px 20px;  
-    box-shadow: 4px 0 15px rgba(0,0,0,0.3);  
-    transition: left 0.3s ease;  
-    z-index: 1000;  
-}  
-.sidebar.active { left: 0; }  
-.sidebar h2 {  
-    color: #fff;  
-    font-size: 1.2rem;  
-    margin-bottom: 20px;  
-    padding-bottom: 15px;  
-    border-bottom: 1px solid rgba(255,255,255,0.2);  
-}  
-.sidebar a {  
-    display: flex;  
-    align-items: center;  
-    gap: 12px;  
-    padding: 14px 18px;  
-    color: #b8b8d1;  
-    text-decoration: none;  
-    border-radius: 8px;  
-    margin-bottom: 8px;  
-    transition: all 0.2s ease;  
-    font-size: 0.95rem;  
-}  
-.sidebar a:hover, .sidebar a.active {  
-    background: rgba(255,255,255,0.15);  
-    color: #fff;  
-    transform: translateX(5px);  
-}  
-.sidebar a i {  
-    width: 20px;  
-    text-align: center;  
-}  
-.sidebar-close {  
-    position: absolute;  
-    top: 15px;  
-    right: 15px;  
-    font-size: 24px;  
-    color: #fff;  
-    cursor: pointer;  
-    opacity: 0.7;  
-    transition: opacity 0.2s;  
-}  
-.sidebar-close:hover { opacity: 1; }  
-.sidebar-toggle {  
-    display: flex;  
-    align-items: center;  
-    gap: 8px;  
-    position: fixed;  
-    top: 15px;  
-    left: 15px;  
-    z-index: 1001;  
-    cursor: pointer;  
-    font-size: 16px;  
-    color: #333;  
-    background: #fff;  
-    padding: 10px 16px;  
-    border-radius: 8px;  
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);  
-    font-weight: 500;  
-    transition: all 0.2s ease;  
-}  
-.sidebar-toggle:hover {  
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);  
-    transform: translateY(-1px);  
-}  
-.sidebar-toggle i { color: #1a1a2e; } 
-  
-/* Sidebar Overlay */  
-.sidebar-overlay {  
-    position: fixed;  
-    top: 0;  
-    left: 0;  
-    width: 100%;  
-    height: 100%;  
-    background: rgba(0,0,0,0.5);  
-    z-index: 999;  
-    opacity: 0;  
-    visibility: hidden;  
-    transition: all 0.3s ease;  
-}  
-.sidebar-overlay.active {  
-    opacity: 1;  
-    visibility: visible;  
+/* === Sidebar === */
+.sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    width: 260px;
+    height: 100vh;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    padding: 0 0 20px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+    transition: left 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+/* Sidebar header area */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.sidebar-header .logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.sidebar-header .sidebar-title {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.sidebar-header .sidebar-subtitle {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    margin: 2px 0 0;
+}
+
+/* Section labels */
+.sidebar-section-label {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 16px 20px 6px;
+}
+
+/* Nav items */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 12px;
+}
+
+.sidebar-nav a,
+.class-tab,
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    border: none;
+    background: transparent;
+}
+
+.sidebar-nav a:hover,
+.class-tab:hover,
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    text-decoration: none;
+    transform: translateX(3px);
+}
+
+.sidebar-nav a.active,
+.class-tab.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-left: 3px solid #D32F2F;
+    padding-left: 9px;
+}
+
+.sidebar-nav a i,
+.class-tab i,
+.sidebar-link i {
+    width: 18px;
+    text-align: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+/* Teacher class indicators */
+.class-tab.my-class {
+    border-left: 3px solid #28a745;
+    padding-left: 9px;
+}
+
+.class-tab.view-only {
+    opacity: 0.65;
+    font-style: italic;
+}
+
+.class-tab.view-only:hover {
+    opacity: 0.9;
+}
+
+/* Divider */
+.sidebar-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 10px 20px;
+}
+
+/* Close button */
+.sidebar-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+    line-height: 1;
+}
+
+.sidebar-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Toggle button */
+.sidebar-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 1001;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    background: #fff;
+    padding: 9px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+    user-select: none;
+}
+
+.sidebar-toggle:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    transform: translateY(-1px);
+}
+
+.sidebar-toggle i {
+    color: #D32F2F;
+    font-size: 1rem;
+}
+
+/* Overlay */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
 } 
   
 /* Responsive list */  
 .students-list { width: 100%; overflow-x: auto; }  
 .students-list-header, .student-row { min-width: 700px; } 
+
+/* === Logout Button === */
+.logout-btn {
+    color: #ffffff;
+    background-color: #D32F2F;
+    border-radius: 25px;
+    padding: 9px 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+    display: inline-block;
+}
+
+.logout-btn:hover {
+    background-color: #B71C1C;
+    color: #ffffff;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+}
+
+/* === Attendance checkbox states === */
+.attendance-checkbox:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Past Sunday row styling */
+.past-sunday {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}

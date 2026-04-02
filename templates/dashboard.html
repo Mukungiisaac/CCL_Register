@@ -14,166 +14,72 @@
 
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-close" id="sidebarClose" title="Close Menu">&times;</div>
-    <div class="logo-wrapper">
-        <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo" style="margin-bottom: 20px; margin-left: 0; height: 80px; width: 80px; border-radius: 50%;">
+
+    <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo">
+        <div>
+            <div class="sidebar-title">Church Register</div>
+            <div class="sidebar-subtitle">Student Management</div>
+        </div>
     </div>
-        <h2 style="margin-bottom: 20px; color: #ffffff; font-size: 1.1rem; font-weight: 600;">Classes</h2>
 
-        <div class="class-navigation">
-            {% if session.get('role') == 'admin' %}
-                <a href="{{ url_for('dashboard') }}" class="class-tab {{ 'active' if not selected_class else '' }}">📋 All Students</a>
-                <a href="{{ url_for('dashboard', class_name='Genesis') }}" class="class-tab {{ 'active' if selected_class == 'Genesis' else '' }}"><i class="fas fa-leaf"></i> Genesis</a>
-                <a href="{{ url_for('dashboard', class_name='Exodus') }}" class="class-tab {{ 'active' if selected_class == 'Exodus' else '' }}"><i class="fas fa-walking"></i> Exodus</a>
-                <a href="{{ url_for('dashboard', class_name='Psalms') }}" class="class-tab {{ 'active' if selected_class == 'Psalms' else '' }}"><i class="fas fa-music"></i> Psalms</a>
-                <a href="{{ url_for('dashboard', class_name='Proverbs') }}" class="class-tab {{ 'active' if selected_class == 'Proverbs' else '' }}"><i class="fas fa-lightbulb"></i> Proverbs</a>
-                <a href="{{ url_for('dashboard', class_name='Revelation') }}" class="class-tab {{ 'active' if selected_class == 'Revelation' else '' }}"><i class="fas fa-star"></i> Revelation</a>
-                <a href="{{ url_for('dashboard', class_name='High Schoolers') }}" class="class-tab {{ 'active' if selected_class == 'High Schoolers' else '' }}"><i class="fas fa-graduation-cap"></i> High School</a>
-            {% elif session.get('role') == 'teacher' %}
-                {% set assigned_class = session.get('assigned_class') %}
-                <a href="{{ url_for('dashboard') }}" class="class-tab {{ 'active' if not selected_class else '' }}">📋 All Students</a>
-                <a href="{{ url_for('dashboard', class_name='Genesis') }}"
-                   class="class-tab {{ 'active' if selected_class == 'Genesis' else '' }} {{ 'my-class' if assigned_class == 'Genesis' else 'view-only' }}">
-                   <i class="fas fa-leaf"></i> Genesis {{ '(My Class)' if assigned_class == 'Genesis' else '(View Only)' }}
-                </a>
-                <a href="{{ url_for('dashboard', class_name='Exodus') }}"
-                   class="class-tab {{ 'active' if selected_class == 'Exodus' else '' }} {{ 'my-class' if assigned_class == 'Exodus' else 'view-only' }}">
-                   🚶 Exodus {{ '(My Class)' if assigned_class == 'Exodus' else '(View Only)' }}
-                </a>
-                <a href="{{ url_for('dashboard', class_name='Psalms') }}"
-                   class="class-tab {{ 'active' if selected_class == 'Psalms' else '' }} {{ 'my-class' if assigned_class == 'Psalms' else 'view-only' }}">
-                   🎵 Psalms {{ '(My Class)' if assigned_class == 'Psalms' else '(View Only)' }}
-                </a>
-                <a href="{{ url_for('dashboard', class_name='Proverbs') }}"
-                   class="class-tab {{ 'active' if selected_class == 'Proverbs' else '' }} {{ 'my-class' if assigned_class == 'Proverbs' else 'view-only' }}">
-                   💡 Proverbs {{ '(My Class)' if assigned_class == 'Proverbs' else '(View Only)' }}
-                </a>
-                <a href="{{ url_for('dashboard', class_name='Revelation') }}"
-                   class="class-tab {{ 'active' if selected_class == 'Revelation' else '' }} {{ 'my-class' if assigned_class == 'Revelation' else 'view-only' }}">
-                   ⭐ Revelation {{ '(My Class)' if assigned_class == 'Revelation' else '(View Only)' }}
-                </a>
-                <a href="{{ url_for('dashboard', class_name='High Schoolers') }}"
-                   class="class-tab {{ 'active' if selected_class == 'High Schoolers' else '' }} {{ 'my-class' if assigned_class == 'High Schoolers' else 'view-only' }}">
-                   🎓 High School {{ '(My Class)' if assigned_class == 'High Schoolers' else '(View Only)' }}
-                </a>
-            {% else %}
-                <a href="{{ url_for('dashboard') }}" class="class-tab active">📋 All Students</a>
-            {% endif %}
-        </div>
+    <div class="sidebar-section-label">Classes</div>
+    <nav class="sidebar-nav">
+        {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if not selected_class else '' }}">
+                <i class="fas fa-list"></i> All Students
+            </a>
+            <a href="{{ url_for('dashboard', class_name='Genesis') }}" class="{{ 'active' if selected_class == 'Genesis' else '' }}">
+                <i class="fas fa-leaf"></i> Genesis
+            </a>
+            <a href="{{ url_for('dashboard', class_name='Exodus') }}" class="{{ 'active' if selected_class == 'Exodus' else '' }}">
+                <i class="fas fa-walking"></i> Exodus
+            </a>
+            <a href="{{ url_for('dashboard', class_name='Psalms') }}" class="{{ 'active' if selected_class == 'Psalms' else '' }}">
+                <i class="fas fa-music"></i> Psalms
+            </a>
+            <a href="{{ url_for('dashboard', class_name='Proverbs') }}" class="{{ 'active' if selected_class == 'Proverbs' else '' }}">
+                <i class="fas fa-lightbulb"></i> Proverbs
+            </a>
+            <a href="{{ url_for('dashboard', class_name='Revelation') }}" class="{{ 'active' if selected_class == 'Revelation' else '' }}">
+                <i class="fas fa-star"></i> Revelation
+            </a>
+            <a href="{{ url_for('dashboard', class_name='High Schoolers') }}" class="{{ 'active' if selected_class == 'High Schoolers' else '' }}">
+                <i class="fas fa-graduation-cap"></i> High School
+            </a>
+        {% elif session.get('role') == 'teacher' %}
+            {% set assigned_class = session.get('assigned_class') %}
+            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if not selected_class else '' }}">
+                <i class="fas fa-list"></i> All Students
+            </a>
+            {% for cls, icon in [('Genesis','fa-leaf'),('Exodus','fa-walking'),('Psalms','fa-music'),('Proverbs','fa-lightbulb'),('Revelation','fa-star'),('High Schoolers','fa-graduation-cap')] %}
+            <a href="{{ url_for('dashboard', class_name=cls) }}"
+               class="class-tab {{ 'active' if selected_class == cls else '' }} {{ 'my-class' if assigned_class == cls else 'view-only' }}">
+                <i class="fas {{ icon }}"></i>
+                {{ 'High School' if cls == 'High Schoolers' else cls }}
+                <small style="margin-left:auto; font-size:0.7rem; opacity:0.7;">{{ 'Mine' if assigned_class == cls else 'View' }}</small>
+            </a>
+            {% endfor %}
+        {% else %}
+            <a href="{{ url_for('dashboard') }}" class="active">
+                <i class="fas fa-list"></i> All Students
+            </a>
+        {% endif %}
+    </nav>
 
-        <div class="sidebar-links">
-           <a href="{{ url_for('attendance_report') }}" class="sidebar-link"><i class="fas fa-clipboard-list"></i> Attendance Report</a>
-           {% if session.get('role') == 'admin' %}
-           <a href="{{ url_for('inventory') }}" class="sidebar-link"><i class="fas fa-box"></i> Inventory</a>
-           {% endif %}
-        </div>
-
-        <style>
-        .class-navigation {
-            display: flex;
-            flex-direction: column;
-            background: none;
-            border-radius: 0;
-            padding: 0;
-            margin-bottom: 20px;
-            gap: 6px;
-        }
-
-        .class-tab {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 12px 16px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .class-tab:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-            text-decoration: none;
-            transform: translateX(2px);
-        }
-
-        .class-tab.active {
-            background: #000000;
-            color: #ffffff;
-            border: 1px solid #333333;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            transform: translateX(2px);
-        }
-
-        .sidebar-links {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-top: 10px;
-        }
-
-        .sidebar-link {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 12px 16px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sidebar-link:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-            text-decoration: none;
-            transform: translateX(2px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        /* Teacher class indicators */
-        .class-tab.my-class {
-            border-left: 4px solid #28a745;
-            font-weight: 600;
-        }
-
-        .class-tab.view-only {
-            opacity: 0.8;
-            font-style: italic;
-        }
-
-        .class-tab.view-only:hover {
-            opacity: 1;
-        }
-
-        /* Disabled attendance checkboxes for view-only mode */
-        .attendance-checkbox:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .attendance-checkbox:disabled:hover {
-            opacity: 0.7;
-        }
-
-        /* Past Sunday styling */
-        .past-sunday {
-            background-color: #f8f9fa;
-            color: #6c757d;
-        }
-
-        .past-sunday .attendance-checkbox {
-            opacity: 0.6;
-        }
-        </style>
-    </aside>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Navigation</div>
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('attendance_report') }}" class="sidebar-link">
+            <i class="fas fa-clipboard-list"></i> Attendance Report
+        </a>
+        {% if session.get('role') == 'admin' %}
+        <a href="{{ url_for('inventory') }}" class="sidebar-link">
+            <i class="fas fa-box"></i> Inventory
+        </a>
+        {% endif %}
+    </nav>
+</aside>
 
     <main class="register">
            {% with messages = get_flashed_messages(with_categories=true) %}
@@ -186,32 +92,6 @@
 
         <div style="text-align: right;">
             <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
-        </div>
-
-        <style>
-        .logout-btn {
-            color: #ffffff;
-            background-color: #D32F2F;
-            border-radius: 25px;
-            padding: 10px 20px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
-            display: inline-block;
-        }
-
-        .logout-btn:hover {
-            background-color: #B71C1C;
-            color: #ffffff;
-            text-decoration: none;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
-        }
-        </style>
-
-        <div class="logo-wrapper">
-            <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo" style="margin-bottom: 20px; margin-left: 0;">
         </div>
 
         <h1>
@@ -296,6 +176,11 @@
             <a href="{{ url_for('admin_teachers') }}" style="background: #6f42c1; color: white; border: none; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
                 <i class="fas fa-users-cog"></i> Teacher Management
             </a>
+            <form method="POST" action="{{ url_for('delete_sample_students') }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete all sample students (without profile photos)? This cannot be undone.');">
+                <button type="submit" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-trash-alt"></i> Clean Up Sample Students
+                </button>
+            </form>
             {% endif %}
         </div>
 
@@ -396,26 +281,24 @@
                 <form action="{{ url_for('reject_delete', student_id=student.id) }}" method="POST" style="display:inline;">
                     <button type="submit" style="background: orange; color: white; border: none; padding: 5px 10px; cursor: pointer;"><i class="fas fa-times"></i> Reject</button>
                 </form>
-            {% elif session["role"] == "admin" and not student.deletion_requested %}
-                <button onclick="deleteStudent({{ student.id }}, '{{ student.name }}')"
-                        title="Delete Student Permanently"
-                        style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-            {% endif %}
-        </td>
-
-
-
-
-
-        </td>
-                <td>
-          <a href="{{ url_for('student_detail', student_id=student.id) }}"
-             style="color: #28a745; text-decoration: none;">
-             <i class="fas fa-eye"></i>
-          </a>
-        </td>
+{% elif session["role"] == "admin" and not student.deletion_requested %}
+                  <button onclick="keepOnlyStudent({{ student.id }}, '{{ student.name }}')"
+                          title="Keep Only This Student - Delete All Others"
+                          style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                      <i class="fas fa-user-check"></i> Keep Only
+                  </button>
+                  <button onclick="deleteStudent({{ student.id }}, '{{ student.name }}')"
+                          title="Delete Student Permanently"
+                          style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                      <i class="fas fa-trash"></i> Delete
+                  </button>
+                  <a href="{{ url_for('student_detail', student_id=student.id) }}"
+                     title="View Student Details"
+                     style="color: #28a745; text-decoration: none; margin-left: 5px;">
+                     <i class="fas fa-eye"></i> View
+                  </a>
+              {% endif %}
+         </td>
 
     </tr>
     {% endfor %}
@@ -666,6 +549,27 @@ function deleteStudent(studentId, studentName) {
         form.action = `/admin/delete-student/${studentId}`;
 
         // Add CSRF protection if needed
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Keep Only This Student - Delete All Others
+function keepOnlyStudent(studentId, studentName) {
+    if (confirm(`Are you sure you want to KEEP ONLY "${studentName}" and delete ALL other students?\n\nThis will delete ALL other students and their attendance records. This action cannot be undone!\n\nClick OK to confirm.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/keep_only_student/${studentId}`;
+
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         if (csrfToken) {
             const csrfInput = document.createElement('input');
