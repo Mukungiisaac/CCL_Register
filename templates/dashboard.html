@@ -10,17 +10,18 @@
 
 <div class="container">
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-<div class="sidebar-toggle" id="sidebarToggle" title="Open Menu"><i class="fas fa-bars"></i> Menu</div>
+<div class="sidebar-toggle" id="sidebarToggle" title="Open Menu">
+    <i class="fas fa-bars"></i> <span>Menu</span>
+</div>
 
 <aside class="sidebar" id="sidebar">
-    <div class="sidebar-close" id="sidebarClose" title="Close Menu">&times;</div>
-
     <div class="sidebar-header">
         <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Logo" class="logo">
-        <div>
+        <div style="flex:1; min-width:0;">
             <div class="sidebar-title">Church Register</div>
             <div class="sidebar-subtitle">Student Management</div>
         </div>
+        <div class="sidebar-close" id="sidebarClose" title="Close Menu">&times;</div>
     </div>
 
     <div class="sidebar-section-label">Classes</div>
@@ -422,11 +423,13 @@ const sidebarOverlay = document.getElementById("sidebarOverlay");
 function openSidebar() {
     sidebar.classList.add("active");
     sidebarOverlay.classList.add("active");
+    toggleBtn.classList.add("hidden");
 }
 
 function closeSidebar() {
     sidebar.classList.remove("active");
     sidebarOverlay.classList.remove("active");
+    toggleBtn.classList.remove("hidden");
 }
 
 toggleBtn.addEventListener("click", (e) => {

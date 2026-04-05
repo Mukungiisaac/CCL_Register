@@ -3,6 +3,7 @@
 <head>
     <title>Edit Student</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="edit-page">
     <div class="edit-container">
@@ -28,7 +29,7 @@
                 {% endfor %}
             </select><br><br>
 
-            <button type="submit">💾 Save Changes</button>
+            <button type="submit"><i class="fas fa-save"></i> Save Changes</button>
             <a href="{{ url_for('dashboard') }}" style="margin-left: 15px;">Cancel</a>
         </form>
     </div>

@@ -244,12 +244,12 @@
 </head>
 <body>
 
-<a href="{{ url_for('dashboard') }}" class="back-btn">← Back to Dashboard</a>
+<a href="{{ url_for('dashboard') }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
 
 <div class="inventory-container">
     <div class="inventory-header">
         <h1 class="inventory-title">
-            <span class="inventory-icon">📦</span>
+            <span class="inventory-icon"><i class="fas fa-boxes"></i></span>
             Inventory Dashboard
         </h1>
         <button class="scan-btn" onclick="openScanModal()">Scan QR to Add</button>
@@ -303,7 +303,7 @@
             </table>
             {% else %}
             <div style="text-align: center; padding: 60px 20px; color: #666;">
-                <div style="font-size: 4rem; margin-bottom: 20px;">📦</div>
+                <div style="font-size: 4rem; margin-bottom: 20px;"><i class="fas fa-box-open" style="color:#ccc"></i></div>
                 <h3 style="margin-bottom: 15px; color: #333;">No Items Yet</h3>
                 <p style="margin-bottom: 25px; font-size: 1.1rem;">Start by adding your first inventory item using the "Scan QR to Add" button above.</p>
                 <p style="font-size: 0.95rem;">You can scan QR codes or create categories manually.</p>
@@ -349,7 +349,7 @@
                 </table>
                 {% else %}
                 <div style="text-align: center; padding: 60px 20px; color: #666;">
-                    <div style="font-size: 3rem; margin-bottom: 20px;">📂</div>
+                    <div style="font-size: 3rem; margin-bottom: 20px;"><i class="fas fa-folder-open" style="color:#ccc"></i></div>
                     <h3 style="margin-bottom: 15px; color: #333;">No {{ category }} Items</h3>
                     <p style="margin-bottom: 25px;">Add items to this category using the "Scan QR to Add" button.</p>
                 </div>

@@ -346,7 +346,7 @@
                                     <img src="{{ url_for('static', filename='uploads/profiles/' + student.profile_image) }}" 
                                          alt="{{ student.name }}" class="student-photo">
                                 {% else %}
-                                    <div class="default-avatar">👤</div>
+                                    <div class="default-avatar"><i class="fas fa-user"></i></div>
                                 {% endif %}
                                 
                                 <h4>{{ student.name }}</h4>
@@ -377,7 +377,7 @@
                     <!-- Inactive Students Tab -->
                     <div id="inactive-tab" class="tab-content">
                         <h3>Inactive Students</h3>
-                        <p>These students are not currently attending classes.</p>
+                        <p>These students are not currently attending classes. Click a card to select for bulk activation, or use the button on each card.</p>
                         
                         {% if inactive_students %}
                         <div class="student-grid">
@@ -389,7 +389,7 @@
                                     <img src="{{ url_for('static', filename='uploads/profiles/' + student.profile_image) }}" 
                                          alt="{{ student.name }}" class="student-photo">
                                 {% else %}
-                                    <div class="default-avatar">👤</div>
+                                    <div class="default-avatar"><i class="fas fa-user"></i></div>
                                 {% endif %}
                                 
                                 <h4>{{ student.name }}</h4>
@@ -399,6 +399,14 @@
                                 <p><small>Family: {{ student.family_id }}</small></p>
                                 {% endif %}
                                 <span class="status-badge status-inactive">Inactive</span>
+
+                                <form method="POST" action="{{ url_for('activate_student', student_id=student.id) }}"
+                                      style="margin-top: 12px;"
+                                      onclick="event.stopPropagation()">
+                                    <button type="submit" class="btn btn-success" style="width:100%; padding: 8px;">
+                                        <i class="fas fa-user-check"></i> Activate
+                                    </button>
+                                </form>
                             </div>
                             {% endfor %}
                         </div>

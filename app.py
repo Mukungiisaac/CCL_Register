@@ -326,25 +326,12 @@ def dashboard():
         current_sunday = today
 
     if selected_class:
-        if user_role == "admin" and request.args.get("show_all") == "1":
-            filtered_students = Student.query.filter(
-                Student.student_class == selected_class,
-                Student.status == "active"
-            ).all()
-        else:
-            filtered_students = Student.query.filter(
-                Student.student_class == selected_class,
-                Student.status == "active",
-                Student.profile_image != None
-            ).all()
+        filtered_students = Student.query.filter(
+            Student.student_class == selected_class,
+            Student.status == "active"
+        ).all()
     else:
-        if user_role == "admin" and request.args.get("show_all") == "1":
-            filtered_students = Student.query.filter_by(status="active").all()
-        else:
-            filtered_students = Student.query.filter(
-                Student.status == "active",
-                Student.profile_image != None
-            ).all()
+        filtered_students = Student.query.filter_by(status="active").all()
 
     # Check for students at risk of deactivation (for admin notification)
     at_risk_count = 0
@@ -520,6 +507,11 @@ def mark_attendance():
     if "user" not in session:
         return redirect(url_for("home"))
 
+    # Block suspended teachers
+    user = User.query.get(session.get("user_id"))
+    if user and user.status == 'suspended':
+        return "Account suspended", 403
+
     student_id = request.form.get("student_id")
     date_str = request.form.get("date")
     present = request.form.get("present") == "true"
@@ -565,8 +557,9 @@ def attendance_report():
         students = Student.query.filter_by(status="active").all()
 
     # Fetch all attendance records for this month
+    last_day = calendar.monthrange(year, month)[1]
     all_attendance = Attendance.query.filter(
-        Attendance.date.between(date(year, month, 1), date(year, month, 31))
+        Attendance.date.between(date(year, month, 1), date(year, month, last_day))
     ).all()
 
     # Create quick lookup: {(student_id, date): present}
@@ -598,8 +591,9 @@ def download_attendance():
         students = Student.query.filter_by(status="active").all()
 
     # Attendance records
+    last_day = calendar.monthrange(year, month)[1]
     all_attendance = Attendance.query.filter(
-        Attendance.date.between(date(year, month, 1), date(year, month, 31))
+        Attendance.date.between(date(year, month, 1), date(year, month, last_day))
     ).all()
 
     attendance_map = {
@@ -652,8 +646,9 @@ def attendance_pdf():
     else:
         students = Student.query.filter_by(status="active").all()
 
+    last_day = calendar.monthrange(year, month)[1]
     records = Attendance.query.filter(
-        Attendance.date.between(date(year, month, 1), date(year, month, 31))
+        Attendance.date.between(date(year, month, 1), date(year, month, last_day))
     ).all()
 
     attendance_map = {
@@ -1071,6 +1066,17 @@ def promote_students():
                          student_data=student_data,
                          classes=classes)
 
+@app.route('/activate_student/<int:student_id>', methods=['POST'])
+def activate_student(student_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+    student = Student.query.get_or_404(student_id)
+    student.status = 'active'
+    db.session.commit()
+    flash(f"{student.name} has been reactivated.", "success")
+    return redirect(url_for('manage_status'))
+
 @app.route('/manage_status', methods=['GET', 'POST'])
 def manage_status():
     if not session.get("role") == "admin":
@@ -1425,6 +1431,20 @@ def reassign_teacher(user_id):
     flash(f"Teacher {user.full_name} reassigned from {old_class} to {new_class}!", "success")
     return redirect(url_for('admin_teachers'))
 
+@app.route('/admin/delete-teacher/<int:user_id>', methods=['POST'])
+def delete_teacher(user_id):
+    if not session.get("role") == "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("dashboard"))
+
+    user = User.query.get_or_404(user_id)
+    name = user.full_name
+    db.session.delete(user)
+    db.session.commit()
+
+    flash(f"Teacher {name} has been permanently deleted.", "danger")
+    return redirect(url_for('admin_teachers'))
+
 # -------------------------------
 # Admin Student Deletion
 # -------------------------------
@@ -1585,26 +1605,6 @@ if __name__ == "__main__":
         db.create_all()
         create_default_users()
     app.run(debug=True)
-
-# -------------------------------
-# Delete All Sample Students (Admin)
-# -------------------------------
-@app.route('/admin/delete-sample-students', methods=['POST'])
-def delete_sample_students():
-    if not session.get("role") == "admin":
-        flash("Access denied.", "danger")
-        return redirect(url_for("dashboard"))
-    
-    sample_students = Student.query.filter(Student.profile_image == None).all()
-    count = len(sample_students)
-    
-    for student in sample_students:
-        Attendance.query.filter_by(student_id=student.id).delete()
-        db.session.delete(student)
-    
-    db.session.commit()
-    flash(f"Successfully deleted {count} sample students!", "success")
-    return redirect(url_for("dashboard"))
 
 # -------------------------------
 # Run App

@@ -6,514 +6,409 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
-        .teacher-management {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+        .tm-wrap { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .tm-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 28px; text-align: center; }
+        .tm-header h1 { margin: 0 0 6px; font-size: 1.6rem; }
+        .tm-header p  { margin: 0; opacity: .7; font-size: .95rem; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-box { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 20px; text-align: center; }
+        .stat-box .num { font-size: 2rem; font-weight: 700; }
+        .stat-box .lbl { color: #666; font-size: .85rem; margin-top: 4px; }
+        .num-pending { color: #f59e0b; } .num-active { color: #10b981; } .num-suspended { color: #ef4444; } .num-rejected { color: #6b7280; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.08); margin-bottom: 24px; overflow: hidden; }
+        .card-head { background: #f8f9fa; padding: 16px 20px; border-bottom: 1px solid #e9ecef; display: flex; align-items: center; gap: 10px; }
+        .card-head h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+        .pill { padding: 3px 10px; border-radius: 20px; font-size: .78rem; font-weight: 600; }
+        .pill-yellow { background: #fef3c7; color: #92400e; } .pill-green { background: #d1fae5; color: #065f46; } .pill-red { background: #fee2e2; color: #991b1b; }
+        
+        .teacher-card { 
+            padding: 24px; 
+            border-bottom: 1px solid #f0f0f0; 
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
+            align-items: start;
         }
-
-        .management-header {
+        .teacher-card:last-child { border-bottom: none; }
+        .teacher-card:hover { background: #fafbfc; }
+        
+        .t-avatar { 
+            width: 56px; height: 56px; border-radius: 50%; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            text-align: center;
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 1.4rem; color: white; flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(102,126,234,.3);
         }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+        
+        .t-content { flex: 1; min-width: 0; }
+        .t-name { 
+            font-weight: 600; font-size: 1.15rem; 
+            margin-bottom: 12px; color: #1f2937;
+            display: flex; align-items: center; gap: 10px;
         }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
+        
+        .t-details { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 10px 20px;
+            margin-bottom: 0;
         }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #333;
+        .t-detail-item {
+            display: flex; align-items: center; gap: 8px;
+            color: #4b5563; font-size: .88rem;
+            padding: 6px 0;
         }
-
-        .stat-label {
-            color: #666;
-            margin-top: 5px;
+        .t-detail-item i { 
+            width: 18px; text-align: center; 
+            color: #9ca3af; font-size: .9rem;
         }
-
-        .section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            overflow: hidden;
+        .t-detail-item strong { 
+            color: #1f2937; font-weight: 600; 
+            margin-left: 4px;
         }
-
-        .section-header {
-            background: #f8f9fa;
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        
+        .t-actions { 
+            display: flex; gap: 8px; 
+            flex-direction: column;
+            align-items: stretch;
+            min-width: 140px;
         }
-
-        .section-title {
-            font-size: 1.2rem;
+        
+        .btn { 
+            padding: 9px 16px; border: none; border-radius: 6px; 
+            cursor: pointer; font-size: .85rem; font-weight: 600; 
+            text-decoration: none; display: inline-flex; 
+            align-items: center; justify-content: center; gap: 6px; 
+            transition: all .2s; white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+        .btn-green { background: #10b981; color: #fff; } 
+        .btn-red { background: #ef4444; color: #fff; } 
+        .btn-yellow { background: #f59e0b; color: #fff; }
+        .btn-blue { background: #3b82f6; color: #fff; } 
+        .btn-gray { background: #6b7280; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #d1d5db; color: #374151; }
+        
+        .suspended-badge { 
+            display: inline-block; padding: 4px 12px; 
+            background: #fee2e2; color: #991b1b; 
+            border-radius: 20px; font-size: .75rem; 
             font-weight: 600;
-            margin: 0;
         }
-
-        .badge {
-            background: #dc3545;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .badge.success {
-            background: #28a745;
-        }
-
-        .badge.warning {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .teacher-card {
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .teacher-card:last-child {
-            border-bottom: none;
-        }
-
-        .teacher-info {
-            flex: 1;
-        }
-
-        .teacher-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-
-        .teacher-details {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .teacher-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-warning {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .class-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .class-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #007bff;
-        }
-
-        .class-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-        }
-
-        .class-teacher {
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .class-students {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 500px;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover {
-            color: black;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        @media (max-width: 768px) {
-            .teacher-card {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
+        
+        .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-bg.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 12px; padding: 28px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+        .modal-box h3 { margin: 0 0 18px; font-size: 1.1rem; }
+        .modal-box label { display: block; font-weight: 600; margin-bottom: 6px; font-size: .9rem; }
+        .modal-box select, .modal-box textarea { width: 100%; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: .9rem; box-sizing: border-box; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        
+        .empty { text-align: center; padding: 40px; color: #9ca3af; }
+        .empty i { font-size: 2.5rem; margin-bottom: 10px; display: block; opacity: .5; }
+        
+        .flash-wrap { margin-bottom: 20px; }
+        .flash-msg { padding: 14px 18px; border-radius: 8px; margin-bottom: 8px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+        .flash-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; } 
+        .flash-warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+        .flash-danger, .flash-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+        
+        @media (max-width: 768px) { 
+            .teacher-card { 
+                grid-template-columns: 1fr; 
+                gap: 16px;
             }
-
-            .teacher-actions {
-                width: 100%;
-                justify-content: flex-start;
+            .t-actions { 
+                flex-direction: row; 
                 flex-wrap: wrap;
+                min-width: 0;
             }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .t-details { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="teacher-management">
-        <div class="management-header">
-            <h1><i class="fas fa-users-cog"></i> Teacher Management</h1>
-            <p>Manage teacher registrations, approvals, and class assignments</p>
+<div class="tm-wrap">
+    <div class="tm-header">
+        <h1><i class="fas fa-users-cog"></i> Teacher Management</h1>
+        <p>View, approve, suspend, or remove teachers</p>
+    </div>
+    
+    <div class="stats-row">
+        <div class="stat-box"><div class="num num-pending">{{ pending_teachers|length }}</div><div class="lbl">Pending</div></div>
+        <div class="stat-box"><div class="num num-active">{{ active_teachers|length }}</div><div class="lbl">Active</div></div>
+        <div class="stat-box"><div class="num num-suspended">{{ suspended_teachers|length }}</div><div class="lbl">Suspended</div></div>
+        <div class="stat-box"><div class="num num-rejected">{{ rejected_teachers|length }}</div><div class="lbl">Rejected</div></div>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-wrap">
+        {% for cat, msg in messages %}
+        <div class="flash-msg flash-{{ cat }}">
+            <i class="fas fa-{{ 'check-circle' if cat == 'success' else 'exclamation-triangle' if cat == 'warning' else 'times-circle' }}"></i>
+            {{ msg }}
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
 
-        <!-- Statistics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number">{{ pending_teachers|length }}</div>
-                <div class="stat-label">Pending Approvals</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ active_teachers|length }}</div>
-                <div class="stat-label">Active Teachers</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ suspended_teachers|length }}</div>
-                <div class="stat-label">Suspended</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ rejected_teachers|length }}</div>
-                <div class="stat-label">Rejected</div>
-            </div>
+    {% if pending_teachers %}
+    <div class="card">
+        <div class="card-head">
+            <i class="fas fa-clock" style="color:#f59e0b"></i>
+            <h2>Pending Approvals</h2>
+            <span class="pill pill-yellow">{{ pending_teachers|length }}</span>
         </div>
-
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        <!-- Pending Approvals -->
-        {% if pending_teachers %}
-        <div class="section">
-            <div class="section-header">
-                <i class="fas fa-clock"></i>
-                <h2 class="section-title">Pending Approvals</h2>
-                <span class="badge">{{ pending_teachers|length }}</span>
-            </div>
-            {% for teacher in pending_teachers %}
-            <div class="teacher-card">
-                <div class="teacher-info">
-                    <div class="teacher-name">{{ teacher.full_name }}</div>
-                    <div class="teacher-details">
-                        <strong>Email:</strong> {{ teacher.email }}<br>
-                        <strong>Username:</strong> {{ teacher.username }}<br>
-                        <strong>Preferred Class:</strong> {{ teacher.preferred_class }}<br>
-                        <strong>Phone:</strong> {{ teacher.phone or 'Not provided' }}<br>
-                        {% if teacher.registration_message %}
-                        <strong>Message:</strong> {{ teacher.registration_message }}<br>
-                        {% endif %}
-                        <strong>Registered:</strong> {{ teacher.created_at.strftime('%Y-%m-%d %H:%M') }}
-                    </div>
-                </div>
-                <div class="teacher-actions">
-                    <button class="btn btn-success" onclick="approveTeacher({{ teacher.id }}, '{{ teacher.preferred_class }}')">
-                        <i class="fas fa-check"></i> Approve
-                    </button>
-                    <button class="btn btn-danger" onclick="rejectTeacher({{ teacher.id }})">
-                        <i class="fas fa-times"></i> Reject
-                    </button>
+        {% for t in pending_teachers %}
+        <div class="teacher-card">
+            <div class="t-avatar"><i class="fas fa-user-clock"></i></div>
+            <div class="t-content">
+                <div class="t-name">{{ t.full_name }}</div>
+                <div class="t-details">
+                    <div class="t-detail-item"><i class="fas fa-envelope"></i> {{ t.email }}</div>
+                    <div class="t-detail-item"><i class="fas fa-at"></i> {{ t.username }}</div>
+                    <div class="t-detail-item"><i class="fas fa-chalkboard"></i> Preferred:<strong>{{ t.preferred_class or '-' }}</strong></div>
+                    <div class="t-detail-item"><i class="fas fa-phone"></i> {{ t.phone or 'No phone' }}</div>
+                    <div class="t-detail-item"><i class="fas fa-calendar"></i> Registered: {{ t.created_at.strftime('%d %b %Y') }}</div>
+                    {% if t.registration_message %}
+                    <div class="t-detail-item" style="grid-column:1/-1"><i class="fas fa-comment"></i> {{ t.registration_message }}</div>
+                    {% endif %}
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Class Assignments Overview -->
-        <div class="section">
-            <div class="section-header">
-                <i class="fas fa-chalkboard-teacher"></i>
-                <h2 class="section-title">Class Assignments</h2>
-            </div>
-            <div class="class-grid">
-                {% for class_name in classes %}
-                <div class="class-card">
-                    <div class="class-name">{{ class_name }}</div>
-                    <div class="class-teacher">
-                        {% if class_assignments[class_name].teacher %}
-                            <i class="fas fa-user"></i> {{ class_assignments[class_name].teacher.full_name }}
-                        {% else %}
-                            <i class="fas fa-user-slash"></i> No teacher assigned
-                        {% endif %}
-                    </div>
-                    <div class="class-students">
-                        <i class="fas fa-users"></i> {{ class_assignments[class_name].student_count }} students
-                    </div>
-                </div>
-                {% endfor %}
+            <div class="t-actions">
+                <button class="btn btn-green" onclick="openApprove({{ t.id }}, '{{ t.preferred_class }}')">
+                    <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn btn-red" onclick="openReject({{ t.id }})">
+                    <i class="fas fa-times"></i> Reject
+                </button>
             </div>
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-        <!-- Active Teachers -->
+    <div class="card">
+        <div class="card-head">
+            <i class="fas fa-user-check" style="color:#10b981"></i>
+            <h2>Active Teachers</h2>
+            <span class="pill pill-green">{{ active_teachers|length }}</span>
+        </div>
         {% if active_teachers %}
-        <div class="section">
-            <div class="section-header">
-                <i class="fas fa-user-check"></i>
-                <h2 class="section-title">Active Teachers</h2>
-                <span class="badge success">{{ active_teachers|length }}</span>
-            </div>
-            {% for teacher in active_teachers %}
-            <div class="teacher-card">
-                <div class="teacher-info">
-                    <div class="teacher-name">{{ teacher.full_name }}</div>
-                    <div class="teacher-details">
-                        <strong>Email:</strong> {{ teacher.email }}<br>
-                        <strong>Assigned Class:</strong> {{ teacher.assigned_class or 'Not assigned' }}<br>
-                        <strong>Last Login:</strong> {{ teacher.last_login.strftime('%Y-%m-%d %H:%M') if teacher.last_login else 'Never' }}
-                    </div>
+        {% for t in active_teachers %}
+        <div class="teacher-card">
+            <div class="t-avatar"><i class="fas fa-user-tie"></i></div>
+            <div class="t-content">
+                <div class="t-name">{{ t.full_name }}</div>
+                <div class="t-details">
+                    <div class="t-detail-item"><i class="fas fa-envelope"></i> {{ t.email }}</div>
+                    <div class="t-detail-item"><i class="fas fa-at"></i> {{ t.username }}</div>
+                    <div class="t-detail-item"><i class="fas fa-chalkboard-teacher"></i> Class:<strong>{{ t.assigned_class or 'Unassigned' }}</strong></div>
+                    <div class="t-detail-item"><i class="fas fa-phone"></i> {{ t.phone or 'No phone' }}</div>
+                    <div class="t-detail-item"><i class="fas fa-sign-in-alt"></i> Last login: {{ t.last_login.strftime('%d %b %Y') if t.last_login else 'Never' }}</div>
+                    <div class="t-detail-item"><i class="fas fa-calendar-plus"></i> Joined: {{ t.created_at.strftime('%d %b %Y') }}</div>
                 </div>
-                <div class="teacher-actions">
-                    <button class="btn btn-primary" onclick="reassignTeacher({{ teacher.id }}, '{{ teacher.assigned_class }}')">
-                        <i class="fas fa-exchange-alt"></i> Reassign
-                    </button>
-                    <button class="btn btn-warning" onclick="suspendTeacher({{ teacher.id }})">
-                        <i class="fas fa-pause"></i> Suspend
-                    </button>
+            </div>
+            <div class="t-actions">
+                <button class="btn btn-blue" onclick="openReassign({{ t.id }}, '{{ t.assigned_class }}')">
+                    <i class="fas fa-exchange-alt"></i> Reassign
+                </button>
+                <button class="btn btn-yellow" onclick="confirmSuspend({{ t.id }}, '{{ t.full_name }}')">
+                    <i class="fas fa-ban"></i> Suspend
+                </button>
+                <button class="btn btn-red" onclick="confirmDelete({{ t.id }}, '{{ t.full_name }}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty"><i class="fas fa-user-slash"></i><div>No active teachers yet.</div></div>
+        {% endif %}
+    </div>
+
+    {% if suspended_teachers %}
+    <div class="card">
+        <div class="card-head">
+            <i class="fas fa-ban" style="color:#ef4444"></i>
+            <h2>Suspended Teachers</h2>
+            <span class="pill pill-red">{{ suspended_teachers|length }}</span>
+        </div>
+        {% for t in suspended_teachers %}
+        <div class="teacher-card">
+            <div class="t-avatar" style="background:#fee2e2;color:#ef4444;box-shadow:0 2px 8px rgba(239,68,68,.3)">
+                <i class="fas fa-user-slash"></i>
+            </div>
+            <div class="t-content">
+                <div class="t-name">
+                    {{ t.full_name }}
+                    <span class="suspended-badge">Suspended</span>
+                </div>
+                <div class="t-details">
+                    <div class="t-detail-item"><i class="fas fa-envelope"></i> {{ t.email }}</div>
+                    <div class="t-detail-item"><i class="fas fa-at"></i> {{ t.username }}</div>
+                    <div class="t-detail-item"><i class="fas fa-chalkboard-teacher"></i> Was:<strong>{{ t.assigned_class or '-' }}</strong></div>
+                    <div class="t-detail-item"><i class="fas fa-phone"></i> {{ t.phone or 'No phone' }}</div>
+                    <div class="t-detail-item"><i class="fas fa-sign-in-alt"></i> Last login: {{ t.last_login.strftime('%d %b %Y') if t.last_login else 'Never' }}</div>
+                </div>
+            </div>
+            <div class="t-actions">
+                <button class="btn btn-green" onclick="openReactivate({{ t.id }}, '{{ t.assigned_class }}')">
+                    <i class="fas fa-undo"></i> Reactivate
+                </button>
+                <button class="btn btn-red" onclick="confirmDelete({{ t.id }}, '{{ t.full_name }}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-head">
+            <i class="fas fa-chalkboard" style="color:#3b82f6"></i>
+            <h2>Class Assignments</h2>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:20px;">
+            {% for cls in classes %}
+            {% set info = class_assignments[cls] %}
+            <div style="background:#f8f9fa;border-radius:10px;padding:18px;border-left:4px solid #3b82f6;">
+                <div style="font-weight:600;font-size:1.05rem;margin-bottom:10px;color:#1f2937;">{{ cls }}</div>
+                <div style="color:#6b7280;font-size:.88rem;margin-bottom:6px;">
+                    <i class="fas fa-user" style="width:18px;color:#9ca3af"></i>
+                    {% if info.teacher %}<strong style="color:#374151">{{ info.teacher.full_name }}</strong>{% else %}<em>No teacher assigned</em>{% endif %}
+                </div>
+                <div style="color:#6b7280;font-size:.88rem;">
+                    <i class="fas fa-users" style="width:18px;color:#9ca3af"></i>
+                    <strong style="color:#374151">{{ info.student_count }}</strong> students
                 </div>
             </div>
             {% endfor %}
         </div>
-        {% endif %}
-
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
     </div>
 
-    <!-- Approval Modal -->
-    <div id="approvalModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Approve Teacher</h3>
-                <span class="close" onclick="closeModal('approvalModal')">&times;</span>
+    <div style="text-align:center;margin-bottom:40px;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-gray">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="modal-bg" id="approveModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-check-circle" style="color:#10b981"></i> Approve Teacher</h3>
+        <form id="approveForm" method="POST">
+            <label>Assign to Class</label>
+            <select name="assigned_class" required>
+                <option value="">Select a class</option>
+                {% for cls in classes %}<option value="{{ cls }}">{{ cls }}</option>{% endfor %}
+            </select>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('approveModal')">Cancel</button>
+                <button type="submit" class="btn btn-green">Approve</button>
             </div>
-            <form id="approvalForm" method="POST">
-                <div class="form-group">
-                    <label class="form-label">Assign to Class:</label>
-                    <select name="assigned_class" class="form-control" required>
-                        <option value="">Select a class</option>
-                        {% for class_name in classes %}
-                        <option value="{{ class_name }}">{{ class_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div style="text-align: right;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('approvalModal')">Cancel</button>
-                    <button type="submit" class="btn btn-success">Approve Teacher</button>
-                </div>
-            </form>
-        </div>
+        </form>
     </div>
+</div>
 
-    <!-- Rejection Modal -->
-    <div id="rejectionModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Reject Teacher Registration</h3>
-                <span class="close" onclick="closeModal('rejectionModal')">&times;</span>
+<div class="modal-bg" id="rejectModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-times-circle" style="color:#ef4444"></i> Reject Registration</h3>
+        <form id="rejectForm" method="POST">
+            <label>Reason (optional)</label>
+            <textarea name="rejection_reason" rows="3" placeholder="Explain why..."></textarea>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('rejectModal')">Cancel</button>
+                <button type="submit" class="btn btn-red">Reject</button>
             </div>
-            <form id="rejectionForm" method="POST">
-                <div class="form-group">
-                    <label class="form-label">Reason for rejection (optional):</label>
-                    <textarea name="rejection_reason" class="form-control" rows="3" 
-                              placeholder="Explain why this registration is being rejected..."></textarea>
-                </div>
-                <div style="text-align: right;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('rejectionModal')">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Reject Registration</button>
-                </div>
-            </form>
-        </div>
+        </form>
     </div>
+</div>
 
-    <script>
-        function approveTeacher(teacherId, preferredClass) {
-            document.getElementById('approvalForm').action = `/admin/approve-teacher/${teacherId}`;
-            document.querySelector('#approvalModal select[name="assigned_class"]').value = preferredClass;
-            document.getElementById('approvalModal').style.display = 'block';
-        }
+<div class="modal-bg" id="reassignModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-exchange-alt" style="color:#3b82f6"></i> Reassign Teacher</h3>
+        <form id="reassignForm" method="POST">
+            <label>New Class</label>
+            <select name="new_class" required>
+                <option value="">Select a class</option>
+                {% for cls in classes %}<option value="{{ cls }}">{{ cls }}</option>{% endfor %}
+            </select>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('reassignModal')">Cancel</button>
+                <button type="submit" class="btn btn-blue">Reassign</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        function rejectTeacher(teacherId) {
-            document.getElementById('rejectionForm').action = `/admin/reject-teacher/${teacherId}`;
-            document.getElementById('rejectionModal').style.display = 'block';
-        }
+<div class="modal-bg" id="reactivateModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-undo" style="color:#10b981"></i> Reactivate Teacher</h3>
+        <form id="reactivateForm" method="POST">
+            <label>Assign to Class</label>
+            <select name="assigned_class" required>
+                <option value="">Select a class</option>
+                {% for cls in classes %}<option value="{{ cls }}">{{ cls }}</option>{% endfor %}
+            </select>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('reactivateModal')">Cancel</button>
+                <button type="submit" class="btn btn-green">Reactivate</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        function suspendTeacher(teacherId) {
-            if (confirm('Are you sure you want to suspend this teacher?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/admin/suspend-teacher/${teacherId}`;
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
+<form id="suspendForm" method="POST" style="display:none"></form>
+<form id="deleteForm"  method="POST" style="display:none"></form>
 
-        function reassignTeacher(teacherId, currentClass) {
-            const newClass = prompt(`Reassign teacher from ${currentClass} to which class?`, currentClass);
-            if (newClass && newClass !== currentClass) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/admin/reassign-teacher/${teacherId}`;
-                
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'new_class';
-                input.value = newClass;
-                form.appendChild(input);
-                
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        }
-    </script>
+<script>
+function openApprove(id, preferred) {
+    document.getElementById('approveForm').action = '/admin/approve-teacher/' + id;
+    document.querySelector('#approveModal select').value = preferred || '';
+    document.getElementById('approveModal').classList.add('open');
+}
+function openReject(id) {
+    document.getElementById('rejectForm').action = '/admin/reject-teacher/' + id;
+    document.getElementById('rejectModal').classList.add('open');
+}
+function openReassign(id, cur) {
+    document.getElementById('reassignForm').action = '/admin/reassign-teacher/' + id;
+    document.querySelector('#reassignModal select').value = cur || '';
+    document.getElementById('reassignModal').classList.add('open');
+}
+function openReactivate(id, cur) {
+    document.getElementById('reactivateForm').action = '/admin/reactivate-teacher/' + id;
+    document.querySelector('#reactivateModal select').value = cur || '';
+    document.getElementById('reactivateModal').classList.add('open');
+}
+function confirmSuspend(id, name) {
+    if (confirm('Suspend ' + name + '?\nThey will not be able to log in or mark attendance.')) {
+        var f = document.getElementById('suspendForm');
+        f.action = '/admin/suspend-teacher/' + id;
+        f.submit();
+    }
+}
+function confirmDelete(id, name) {
+    if (confirm('Permanently delete ' + name + '?\nThis cannot be undone.')) {
+        var f = document.getElementById('deleteForm');
+        f.action = '/admin/delete-teacher/' + id;
+        f.submit();
+    }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(function(m) {
+    m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
+});
+setTimeout(function() {
+    document.querySelectorAll('.flash-msg').forEach(function(el) {
+        el.style.transition = 'opacity .5s'; el.style.opacity = '0';
+        setTimeout(function() { el.remove(); }, 500);
+    });
+}, 4000);
+</script>
 </body>
 </html>
